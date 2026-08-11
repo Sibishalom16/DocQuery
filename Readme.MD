@@ -1,8 +1,4 @@
 
-Sibiraj S
-15:21 (2 minutes ago)
-to me
-
 # DocQuery
 
 ## AI-Powered Document Question Answering using RAG
