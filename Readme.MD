@@ -77,6 +77,7 @@ The system is designed to answer questions based on the uploaded documents rathe
                      |
                      v
              Answer + Sources
+
 RAG Pipeline
 Document Processing
 Document
@@ -108,7 +109,10 @@ Gemini AI
 Grounded Answer
       ↓
 Source Citation
+
+
 Key Features
+
 PDF document upload
 PDF text extraction
 Text cleaning and chunking
@@ -124,6 +128,7 @@ Grounded responses
 Basic retrieval and answer evaluation
 Streamlit interface
 FastAPI backend
+
 Example
 User Question
 What are the reporting requirements for the grant?
@@ -168,6 +173,8 @@ Source:
 Grant_Guidelines.pdf
 Page: 12
 Section: Reporting Requirements
+
+
 Tech Stack
 Technology	Purpose
 Python	Main programming language
@@ -258,6 +265,8 @@ Chunk
 Generate Embeddings
    ↓
 Store in ChromaDB
+
+
 POST /query
 Accepts a natural-language question and returns a grounded answer.
 
@@ -276,19 +285,25 @@ Response
     }
   ]
 }
+
+
 Setup
 1. Clone the Repository
 git clone <repository-url>
 cd DocQuery
+
 2. Create a Virtual Environment
 python -m venv .venv
+
 3. Activate the Virtual Environment
 Windows
 .venv\Scripts\activate
 macOS / Linux
 source .venv/bin/activate
+
 4. Install Dependencies
 pip install -r requirements.txt
+
 5. Configure Environment Variables
 Create a .env file in the project root:
 
@@ -307,18 +322,23 @@ Member	Responsibility
 Member 1	Streamlit / Frontend
 Member 2	FastAPI / Backend
 Member 3	RAG / AI / Document Processing
+
 Member 1 — Frontend
 Streamlit interface
 Document upload
 Question input
 Answer display
 Source display
+
+
 Member 2 — Backend
 FastAPI setup
 /upload endpoint
 /query endpoint
 API integration
 Error handling
+
+
 Member 3 — RAG / AI
 PDF processing
 Text extraction
@@ -330,6 +350,8 @@ ChromaDB
 Retrieval
 Gemini integration
 Prompt design
+
+
 Evaluation
 DocQuery will be evaluated at both the retrieval and answer levels.
 
@@ -347,7 +369,10 @@ What are the reporting requirements?	Grant Guidelines
 What expenses are eligible?	Grant Guidelines
 When is the report due?	Donor Agreement
 What outcomes were achieved?	Impact Report
+
+
 Scope
+
 In Scope
 Document upload
 PDF processing
@@ -368,6 +393,8 @@ Streamlit interface
 FastAPI backend
 Basic evaluation
 Deployment
+
+
 Out of Scope
 Mobile application
 Voice assistant
@@ -401,6 +428,7 @@ Stronger Source Verification
 Answers include document and page references so staff can verify information before responding to funders.
 
 Future Improvements
+
 Hybrid keyword + vector search
 Advanced re-ranking
 Conversation history
@@ -426,13 +454,18 @@ The DocQuery MVP will be considered successful when:
  The system avoids unsupported answers.
  The complete application works end-to-end.
  The application can be demonstrated successfully.
+
+
 Development Roadmap
+
+
 Phase 1 — Foundation
  GitHub repository setup
  Python environment setup
  Environment variables
  Gemini API setup
  Basic document loading
+
 Phase 2 — Document Processing
  PDF processing
  Text extraction
@@ -441,6 +474,7 @@ Phase 2 — Document Processing
  Metadata generation
  Embedding generation
  ChromaDB setup
+
 Phase 3 — RAG Pipeline
  Query embedding
  Vector search
@@ -450,6 +484,7 @@ Phase 3 — RAG Pipeline
  Grounded generation
  Source citations
  Retrieval evaluation
+
 Phase 4 — Application
  FastAPI backend
  /upload endpoint
@@ -460,6 +495,7 @@ Phase 4 — Application
  Source display
  Error handling
  Testing
+
 Phase 5 — Delivery
  End-to-end testing
  Deployment
@@ -467,6 +503,7 @@ Phase 5 — Delivery
  README completion
  Demo preparation
  Final presentation
+
 Project Status
 Under Development
 
