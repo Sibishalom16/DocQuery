@@ -1,88 +1,97 @@
+DocQuery
+AI-Powered Document Question Answering using RAG
+DocQuery is an AI-powered document question-answering application designed to help nonprofit organization staff quickly find reliable information from documents such as grant guidelines, donor agreements, and impact reports.
 
-# DocQuery
+Instead of manually searching through multiple documents, users can log in, upload documents, and ask questions in natural language. DocQuery uses Retrieval-Augmented Generation (RAG) to retrieve relevant information from the uploaded documents and uses Gemini AI to generate grounded answers with source references.
 
-## AI-Powered Document Question Answering using RAG
+The system also maintains user-specific documents and data so users can return later without uploading their documents again.
 
-DocQuery is an AI-powered document question-answering application designed to help **nonprofit organization staff** quickly find reliable information from documents such as **grant guidelines, donor agreements, and impact reports**.
+Problem Statement
+A nonprofit organization may have grant guidelines, donor agreements, impact reports, and other important documents, but staff often cannot quickly answer questions because the required information is scattered across multiple documents.
 
-Instead of manually searching through multiple documents, staff can upload documents and ask questions in natural language. DocQuery uses **Retrieval-Augmented Generation (RAG)** to retrieve relevant information and **Gemini AI** to generate grounded answers with source references.
+Manually searching these documents can be time-consuming and may lead to missed or incorrect information.
 
----
+DocQuery solves this by providing a single interface where users can upload their documents and ask questions about them using natural language.
 
-## Problem Statement
+Solution
+DocQuery allows users to:
 
-A nonprofit organization holds grant guidelines, donor agreements, and impact reports, but program staff cannot quickly answer funder questions because the relevant clauses are scattered across many documents.
+Create an account and log in.
 
-Finding the required information manually can be time-consuming and may lead to missed or incorrect information.
+Upload organizational PDF documents.
 
----
+Store their documents for future access.
 
-## Solution
+Ask questions in natural language.
 
-DocQuery provides a simple interface where nonprofit staff can:
+Retrieve relevant information from their uploaded documents.
 
-1. Upload organizational documents.
-2. Ask questions in natural language.
-3. Retrieve relevant information from the uploaded documents.
-4. Generate answers using Gemini AI.
-5. View the source document and page associated with the answer.
+Generate answers using Gemini AI.
+
+View the source document and page associated with the answer.
+
+Return later and continue using their previously uploaded documents.
 
 The system is designed to answer questions based on the uploaded documents rather than relying on unsupported information.
 
----
-
-## How DocQuery Works
-
-```text
-                    User
-                     |
-                     v
-              Upload Documents
-                     |
-                     v
-              Extract PDF Text
-                     |
-                     v
-                Clean Text
-                     |
-                     v
-                  Chunking
-                     |
-                     v
-                 Metadata
-                     |
-                     v
-                Embeddings
-                     |
-                     v
-                ChromaDB
-                     |
-                     |
-             User asks a question
-                     |
-                     v
-            Question Embedding
-                     |
-                     v
-            Vector Similarity Search
-                     |
-                     v
-              Top-K Chunks
-                     |
-                     v
-            Relevant Context
-                     |
-                     v
-                 Gemini AI
-                     |
-                     v
-             Answer + Sources
-
+How DocQuery Works
+                         User
+                           |
+                           v
+                    Login / Sign Up
+                           |
+                           v
+                    Streamlit UI
+                           |
+                           v
+                  Upload Documents
+                           |
+                           v
+                     FastAPI API
+                           |
+                           v
+                   Extract PDF Text
+                           |
+                           v
+                      Clean Text
+                           |
+                           v
+                       Chunking
+                           |
+                           v
+                      Metadata
+                           |
+                           v
+                  Gemini Embeddings
+                           |
+                           v
+                       ChromaDB
+                           |
+                           |
+                    User asks a question
+                           |
+                           v
+                   Question Embedding
+                           |
+                           v
+                Vector Similarity Search
+                           |
+                           v
+                     Top-K Chunks
+                           |
+                           v
+                  Relevant Context
+                           |
+                           v
+                       Gemini AI
+                           |
+                           v
+                    Answer + Sources
 RAG Pipeline
 Document Processing
 Document
    ↓
-Text Extraction
+PDF Text Extraction
    ↓
 Text Cleaning
    ↓
@@ -109,24 +118,69 @@ Gemini AI
 Grounded Answer
       ↓
 Source Citation
+Authentication and Data Persistence
+DocQuery includes authentication so that each user's documents and application data remain associated with their account.
 
+User
+ ↓
+Login / Sign Up
+ ↓
+User ID
+ ↓
+User's Documents
+ ↓
+User's Document Metadata
+ ↓
+User's RAG Data
+For example:
+
+User A
+ ├── Grant_Guidelines.pdf
+ ├── Donor_Agreement.pdf
+ └── Impact_Report.pdf
+
+User B
+ ├── Company_Policy.pdf
+ └── Project_Report.pdf
+When a user returns and logs in again, their previously uploaded documents remain available.
+
+Authentication and persistent storage are included to make DocQuery more practical for repeated organizational use.
 
 Key Features
+User registration and login
+
+User-specific document storage
 
 PDF document upload
+
 PDF text extraction
+
 Text cleaning and chunking
+
 Metadata management
+
 Embedding generation
+
 ChromaDB vector storage
+
 Vector similarity search
+
 Top-K retrieval
+
 Gemini AI answer generation
+
 Source and page citations
+
 Grounded responses
+
 "I don't know" fallback
+
+Document library
+
 Basic retrieval and answer evaluation
+
 Streamlit interface
+
 FastAPI backend
 
 Example
@@ -144,10 +198,15 @@ DocQuery is designed to generate answers using information retrieved from the up
 The system should:
 
 Use the retrieved document context.
+
 Avoid unsupported information.
+
 Avoid relying on outside knowledge for document-specific questions.
+
 Provide the source of the retrieved information.
+
 Clearly indicate when sufficient information is not available.
+
 If the answer cannot be found:
 
 I couldn't find enough information in the provided documents to answer this question.
@@ -158,6 +217,7 @@ Source Citations
 Each document chunk contains metadata such as:
 
 {
+  "user_id": "user_001",
   "document_name": "Grant_Guidelines.pdf",
   "document_type": "Grant Guidelines",
   "page": 12,
@@ -173,13 +233,13 @@ Source:
 Grant_Guidelines.pdf
 Page: 12
 Section: Reporting Requirements
-
-
 Tech Stack
 Technology	Purpose
 Python	Main programming language
 Streamlit	User interface
+Figma	UI/UX design
 FastAPI	Backend API
+PostgreSQL	User accounts and persistent application data
 PyPDF	PDF text extraction
 LangChain	RAG pipeline orchestration
 Gemini API	AI answer generation
@@ -188,19 +248,37 @@ ChromaDB	Vector database and similarity search
 python-dotenv	Environment variable management
 Git	Version control
 GitHub	Team collaboration
-Note: The exact Gemini embedding model will be finalized based on the available Gemini API/model support during implementation.
+The exact Gemini embedding model will be finalized based on the available Gemini API/model support during implementation.
 
 Data Storage
+User and Application Data
+PostgreSQL is used to store structured application data such as:
+
+Users
+Documents
+Document metadata
+User-document relationships
+Example relationship:
+
+User
+ ↓
+Documents
+ ↓
+Document Metadata
 Uploaded Documents
-During the MVP, uploaded PDFs are stored locally:
+During the MVP, uploaded PDFs can be stored locally:
 
 data/
 └── documents/
     ├── grant_guidelines.pdf
     ├── donor_agreement.pdf
     └── impact_report.pdf
+The document metadata stored in PostgreSQL identifies which user owns each document.
+
+Cloud object storage can be added later for production deployment.
+
 Embeddings and Metadata
-Document embeddings and associated metadata are stored in:
+Document embeddings and retrieval metadata are stored in:
 
 ChromaDB
 API Keys
@@ -216,6 +294,7 @@ DocQuery/
 │   ├── main.py
 │   │
 │   ├── api/
+│   │   ├── auth.py
 │   │   ├── upload.py
 │   │   └── query.py
 │   │
@@ -232,9 +311,13 @@ DocQuery/
 │   │   ├── vector_store.py
 │   │   └── retriever.py
 │   │
-│   └── generation/
-│       ├── llm.py
-│       └── prompts.py
+│   ├── generation/
+│   │   ├── llm.py
+│   │   └── prompts.py
+│   │
+│   └── database/
+│       ├── models.py
+│       └── database.py
 │
 ├── frontend/
 │   └── streamlit_app.py
@@ -251,6 +334,14 @@ DocQuery/
 ├── requirements.txt
 └── README.md
 API Endpoints
+Authentication
+POST /auth/register
+Creates a new user account.
+
+POST /auth/login
+Authenticates an existing user.
+
+Document Upload
 POST /upload
 Uploads and processes a document.
 
@@ -265,8 +356,9 @@ Chunk
 Generate Embeddings
    ↓
 Store in ChromaDB
-
-
+   ↓
+Save Document Metadata
+Question Answering
 POST /query
 Accepts a natural-language question and returns a grounded answer.
 
@@ -285,29 +377,24 @@ Response
     }
   ]
 }
-
-
 Setup
 1. Clone the Repository
 git clone <repository-url>
 cd DocQuery
-
 2. Create a Virtual Environment
 python -m venv .venv
-
 3. Activate the Virtual Environment
 Windows
 .venv\Scripts\activate
 macOS / Linux
 source .venv/bin/activate
-
 4. Install Dependencies
 pip install -r requirements.txt
-
 5. Configure Environment Variables
 Create a .env file in the project root:
 
 GEMINI_API_KEY=your_api_key
+DATABASE_URL=your_postgresql_connection_string
 Never commit the .env file to GitHub.
 
 Running the Application
@@ -315,194 +402,353 @@ Start FastAPI Backend
 uvicorn app.main:app --reload
 Start Streamlit Frontend
 streamlit run frontend/streamlit_app.py
+User Flow
+Landing Page
+      ↓
+Login / Sign Up
+      ↓
+User Dashboard
+      ↓
+Upload Document
+      ↓
+Document Processing
+      ↓
+Document Library
+      ↓
+Ask Question
+      ↓
+RAG Retrieval
+      ↓
+Gemini Answer
+      ↓
+Answer + Source
+When the user returns later:
+
+Login
+  ↓
+Dashboard
+  ↓
+Previously Uploaded Documents
+  ↓
+Continue Asking Questions
 Team Responsibilities
-The project is divided among three team members.
+The project is divided between two team members for documentation and ownership.
 
-Member	Responsibility
-Member 1	Streamlit / Frontend
-Member 2	FastAPI / Backend
-Member 3	RAG / AI / Document Processing
+Member 1 — Frontend / UI/UX
+Figma design
 
-Member 1 — Frontend
 Streamlit interface
-Document upload
+
+Login and signup interface
+
+Dashboard
+
+Document library
+
+Document upload interface
+
 Question input
+
+Chat interface
+
 Answer display
+
 Source display
 
+Frontend integration
 
-Member 2 — Backend
+Member 2 — Backend / RAG / AI
 FastAPI setup
-/upload endpoint
-/query endpoint
-API integration
-Error handling
 
+Authentication backend
 
-Member 3 — RAG / AI
+PostgreSQL integration
+
+Document upload API
+
 PDF processing
+
 Text extraction
+
 Text cleaning
+
 Chunking
+
 Metadata
+
 Embeddings
+
 ChromaDB
+
 Retrieval
+
 Gemini integration
+
 Prompt design
 
+API integration
+
+Although ownership is divided for documentation, both team members will understand and contribute to the complete frontend and backend workflow so that either member can explain the project during the final presentation.
 
 Evaluation
 DocQuery will be evaluated at both the retrieval and answer levels.
 
 Retrieval Evaluation
 Recall@K
+
 Precision@K
+
 Answer Evaluation
 Correctness
+
 Groundedness
+
 Citation accuracy
+
 Appropriate "I don't know" responses
+
 Example Evaluation Questions
 Question	Expected Source
 What are the reporting requirements?	Grant Guidelines
 What expenses are eligible?	Grant Guidelines
 When is the report due?	Donor Agreement
 What outcomes were achieved?	Impact Report
-
-
 Scope
-
 In Scope
-Document upload
-PDF processing
-Text extraction
-Text cleaning
-Document chunking
-Metadata management
-Embedding generation
-ChromaDB vector database
-Vector similarity search
-Top-K retrieval
-RAG-based question answering
-Gemini AI integration
-Grounded responses
-Source citations
-"I don't know" fallback
-Streamlit interface
-FastAPI backend
-Basic evaluation
-Deployment
+User registration and login
 
+User-specific data
+
+Document upload
+
+PDF processing
+
+Text extraction
+
+Text cleaning
+
+Document chunking
+
+Metadata management
+
+Embedding generation
+
+ChromaDB vector database
+
+Vector similarity search
+
+Top-K retrieval
+
+RAG-based question answering
+
+Gemini AI integration
+
+Grounded responses
+
+Source citations
+
+"I don't know" fallback
+
+Streamlit interface
+
+FastAPI backend
+
+PostgreSQL application data
+
+Basic evaluation
+
+Deployment
 
 Out of Scope
 Mobile application
+
 Voice assistant
+
 LLM fine-tuning
+
 Training a custom embedding model
-Multi-organization SaaS
-Advanced authentication and SSO
+
+Multi-organization SaaS architecture
+
+Advanced enterprise SSO
+
 Payment integration
+
 WhatsApp integration
+
 Complex autonomous agent workflows
+
 Custom model training
+
 Improvements from the Initial Approach
-The initial RAG architecture is retained, while a few changes were made to keep the project focused and practical.
+The initial RAG architecture is retained while the application is extended to support persistent user data.
 
 Gemini instead of OpenAI
 Gemini is used for answer generation and the planned embedding layer, allowing the team to work primarily with one AI ecosystem and simplify API management.
 
-No PostgreSQL for MVP
-PostgreSQL is not required because the MVP does not need user accounts, roles, payments, or complex structured application data.
+Streamlit for the Frontend
+Streamlit provides a fast way to build the document upload, document library, and question-answer interface while allowing the team to focus more effort on the RAG pipeline.
 
-No Supabase Storage
-Documents are stored locally during the MVP. Cloud storage can be added later if the project moves toward production deployment.
+Authentication Added
+Authentication is now included because users need to return to the application and access their previously uploaded documents.
 
-No Authentication
-Login and role management are outside the core problem being solved. The MVP focuses on document retrieval and question answering.
+PostgreSQL Added
+PostgreSQL is introduced to store user accounts, document metadata, and relationships between users and their documents.
 
-Streamlit for a Simple Frontend
-Streamlit provides a fast way to build the document upload and question-answer interface, allowing the team to focus more effort on the RAG pipeline.
+Local Document Storage for MVP
+Uploaded PDFs can remain in local storage during the MVP. Cloud object storage can be added later if the project moves toward production deployment.
 
 Stronger Source Verification
 Answers include document and page references so staff can verify information before responding to funders.
 
 Future Improvements
+Cloud document storage
 
 Hybrid keyword + vector search
+
 Advanced re-ranking
+
 Conversation history
+
 Improved document preview
+
 Document-level filtering
-Authentication and access control
-Cloud document storage
+
+Role-based access control
+
+Multi-organization SaaS support
+
 Support for additional document formats
+
 Improved scanned-document processing
+
 Usage and cost monitoring
+
 Advanced RAG evaluation
+
 Success Criteria
 The DocQuery MVP will be considered successful when:
 
- Users can upload supported documents.
- Documents are processed successfully.
- Text is correctly extracted and chunked.
- Embeddings are generated.
- Chunks are stored in ChromaDB.
- Relevant chunks can be retrieved.
- Gemini generates answers using retrieved context.
- Answers include source information.
- The system avoids unsupported answers.
- The complete application works end-to-end.
- The application can be demonstrated successfully.
+Users can create accounts and log in.
 
+Users can upload supported documents.
+
+Documents are associated with the correct user.
+
+Documents remain available after the user returns.
+
+Documents are processed successfully.
+
+Text is correctly extracted and chunked.
+
+Embeddings are generated.
+
+Chunks are stored in ChromaDB.
+
+Relevant chunks can be retrieved.
+
+Gemini generates answers using retrieved context.
+
+Answers include source information.
+
+The system avoids unsupported answers.
+
+The complete application works end-to-end.
+
+The application can be demonstrated successfully.
 
 Development Roadmap
-
-
 Phase 1 — Foundation
- GitHub repository setup
- Python environment setup
- Environment variables
- Gemini API setup
- Basic document loading
+GitHub repository setup
 
-Phase 2 — Document Processing
- PDF processing
- Text extraction
- Text cleaning
- Chunking
- Metadata generation
- Embedding generation
- ChromaDB setup
+Python environment setup
 
-Phase 3 — RAG Pipeline
- Query embedding
- Vector search
- Top-K retrieval
- Context construction
- Gemini integration
- Grounded generation
- Source citations
- Retrieval evaluation
+Environment variables
 
-Phase 4 — Application
- FastAPI backend
- /upload endpoint
- /query endpoint
- Streamlit interface
- Document upload interface
- Question-answer interface
- Source display
- Error handling
- Testing
+Gemini API setup
 
-Phase 5 — Delivery
- End-to-end testing
- Deployment
- Documentation
- README completion
- Demo preparation
- Final presentation
+PostgreSQL setup
+
+Basic FastAPI setup
+
+Streamlit setup
+
+Phase 2 — Authentication & Data
+User registration
+
+User login
+
+Authentication handling
+
+User database model
+
+Document metadata model
+
+User-document relationship
+
+Phase 3 — Document Processing
+PDF processing
+
+Text extraction
+
+Text cleaning
+
+Chunking
+
+Metadata generation
+
+Embedding generation
+
+ChromaDB setup
+
+Phase 4 — RAG Pipeline
+Query embedding
+
+Vector search
+
+Top-K retrieval
+
+Context construction
+
+Gemini integration
+
+Grounded generation
+
+Source citations
+
+Retrieval evaluation
+
+Phase 5 — Application
+Streamlit dashboard
+
+Document upload interface
+
+Document library
+
+Question-answer interface
+
+Source display
+
+Authentication integration
+
+API integration
+
+Error handling
+
+Testing
+
+Phase 6 — Delivery
+End-to-end testing
+
+Deployment
+
+Documentation
+
+README completion
+
+Demo preparation
+
+Final presentation
 
 Project Status
 Under Development
