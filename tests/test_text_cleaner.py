@@ -1,3 +1,4 @@
+from rag.pdf_loader import extract_text_from_pdf
 from rag.text_cleaner import clean_text
 
 
@@ -28,3 +29,19 @@ def test_preserve_paragraphs():
 
     assert "Article I\nStandard Conditions" in cleaned
     assert "1.01. The conditions apply." in cleaned
+
+
+def test_real_pdf():
+    pdf_path = "data/uploads/UNICEF Annual Report 2025.pdf"
+
+    pages = extract_text_from_pdf(pdf_path)
+
+    for page in pages[:3]:
+        cleaned = clean_text(page["text"])
+
+        print(f"\n--- Page {page['page']} ---")
+        print("BEFORE:")
+        print(repr(page["text"][:300]))
+
+        print("AFTER:")
+        print(repr(cleaned[:300]))
