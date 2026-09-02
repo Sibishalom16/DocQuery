@@ -1,12 +1,18 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from database.connection import SessionLocal
 from database.models import User
 from backend.schemas import UserRegister, UserLogin
 from backend.security import hash_password, verify_password
+from backend.auth import create_access_token, verify_access_token
+
 
 app = FastAPI(title="DocQuery API")
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
 
 def get_db():
@@ -17,14 +23,41 @@ def get_db():
         db.close()
 
 
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+):
+    user_id = verify_access_token(token)
+
+    if user_id is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired token"
+        )
+
+    user = db.query(User).filter(
+        User.id == user_id
+    ).first()
+
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="User not found"
+        )
+
+    return user
+
+
 @app.get("/")
 def root():
     return {"message": "DocQuery API is running"}
 
 
 @app.post("/register")
-def register(user_data: UserRegister, db: Session = Depends(get_db)):
-
+def register(
+    user_data: UserRegister,
+    db: Session = Depends(get_db)
+):
     existing_user = db.query(User).filter(
         User.email == user_data.email
     ).first()
@@ -52,8 +85,10 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
 
 
 @app.post("/login")
-def login(user_data: UserLogin, db: Session = Depends(get_db)):
-
+def login(
+    user_data: UserLogin,
+    db: Session = Depends(get_db)
+):
     user = db.query(User).filter(
         User.email == user_data.email
     ).first()
@@ -73,9 +108,23 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
             detail="Invalid email or password"
         )
 
+    access_token = create_access_token(
+        data={"user_id": user.id}
+    )
+
     return {
         "message": "Login successful",
-        "user_id": user.id,
-        "name": user.name,
-        "email": user.email
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
+
+
+@app.get("/me")
+def get_me(
+    current_user: User = Depends(get_current_user)
+):
+    return {
+        "user_id": current_user.id,
+        "name": current_user.name,
+        "email": current_user.email
     }
