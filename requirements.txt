@@ -22,8 +22,10 @@ cryptography==50.0.1
 cycler==0.12.1
 decorator==5.3.1
 distro==1.9.0
+dnspython==2.8.0
 dotenv==0.9.9
 durationpy==0.11
+email-validator==2.3.0
 et_xmlfile==2.0.0
 executing==2.2.1
 fastapi==0.141.1
