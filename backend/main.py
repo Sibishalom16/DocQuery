@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 
 from database.connection import SessionLocal
 from database.models import User
-from backend.schemas import UserRegister
-from backend.security import hash_password
+from backend.schemas import UserRegister, UserLogin
+from backend.security import hash_password, verify_password
 
 app = FastAPI(title="DocQuery API")
 
@@ -48,4 +48,34 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
     return {
         "message": "User registered successfully",
         "user_id": new_user.id
+    }
+
+
+@app.post("/login")
+def login(user_data: UserLogin, db: Session = Depends(get_db)):
+
+    user = db.query(User).filter(
+        User.email == user_data.email
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password"
+        )
+
+    if not verify_password(
+        user_data.password,
+        user.password_hash
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password"
+        )
+
+    return {
+        "message": "Login successful",
+        "user_id": user.id,
+        "name": user.name,
+        "email": user.email
     }
