@@ -132,7 +132,8 @@ def get_me(
 @app.post("/documents/upload")
 async def upload_document(
     file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     if file.content_type != "application/pdf":
         raise HTTPException(
@@ -145,7 +146,18 @@ async def upload_document(
     with open(file_path, "wb") as buffer:
         buffer.write(await file.read())
 
+    document = Document(
+        user_id=current_user.id,
+        filename=file.filename,
+        file_path=file_path
+    )
+
+    db.add(document)
+    db.commit()
+    db.refresh(document)
+
     return {
         "message": "File uploaded successfully",
-        "filename": file.filename
+        "document_id": document.id,
+        "filename": document.filename
     }
