@@ -1,13 +1,12 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from database.connection import SessionLocal
-from database.models import User
+from database.models import User, Document
 from backend.schemas import UserRegister, UserLogin
 from backend.security import hash_password, verify_password
 from backend.auth import create_access_token, verify_access_token
-
 
 app = FastAPI(title="DocQuery API")
 
@@ -127,4 +126,26 @@ def get_me(
         "user_id": current_user.id,
         "name": current_user.name,
         "email": current_user.email
+    }
+
+
+@app.post("/documents/upload")
+async def upload_document(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    if file.content_type != "application/pdf":
+        raise HTTPException(
+            status_code=400,
+            detail="Only PDF files are allowed"
+        )
+
+    file_path = f"data/uploads/{file.filename}"
+
+    with open(file_path, "wb") as buffer:
+        buffer.write(await file.read())
+
+    return {
+        "message": "File uploaded successfully",
+        "filename": file.filename
     }
