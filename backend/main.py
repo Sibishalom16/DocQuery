@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from database.connection import SessionLocal
 from database.models import User, Document
-from backend.schemas import UserRegister, UserLogin
+from backend.schemas import UserRegister, UserLogin, QueryRequest
 from backend.security import hash_password, verify_password
 from backend.auth import create_access_token, verify_access_token
 
@@ -160,4 +160,16 @@ async def upload_document(
         "message": "File uploaded successfully",
         "document_id": document.id,
         "filename": document.filename
+    }
+
+
+@app.post("/query")
+def query_document(
+    query_data: QueryRequest,
+    current_user: User = Depends(get_current_user)
+):
+    return {
+        "message": "Query received successfully",
+        "user_id": current_user.id,
+        "question": query_data.question
     }

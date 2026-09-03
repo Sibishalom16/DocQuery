@@ -10,3 +10,7 @@ class UserRegister(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+
+class QueryRequest(BaseModel):
+    question: str
