@@ -1,15 +1,17 @@
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-
 from database.connection import SessionLocal
 from database.models import User, Document
 from backend.schemas import UserRegister, UserLogin, QueryRequest
 from backend.security import hash_password, verify_password
 from backend.auth import create_access_token, verify_access_token
 
-app = FastAPI(title="DocQuery API")
+from rag.retriever import retrieve_documents
+from rag.generator import generate_answer
 
+
+app = FastAPI(title="DocQuery API")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
@@ -168,8 +170,38 @@ def query_document(
     query_data: QueryRequest,
     current_user: User = Depends(get_current_user)
 ):
+    retrieved_documents = retrieve_documents(
+        query_data.question,
+        top_k=5
+    )
+
+    answer = generate_answer(
+        query_data.question,
+        retrieved_documents
+    )
+
+    sources = []
+    seen_sources = set()
+
+    for document in retrieved_documents:
+        metadata = document["metadata"]
+
+        source = (
+            metadata.get("document_name"),
+            metadata.get("page")
+        )
+
+        if source not in seen_sources:
+            seen_sources.add(source)
+
+            sources.append({
+                "document": source[0],
+                "page": source[1]
+            })
+
     return {
-        "message": "Query received successfully",
         "user_id": current_user.id,
-        "question": query_data.question
+        "question": query_data.question,
+        "answer": answer,
+        "sources": sources
     }
