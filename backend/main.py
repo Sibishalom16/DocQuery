@@ -11,6 +11,7 @@ from database.models import User, Document
 from backend.schemas import UserRegister, UserLogin, QueryRequest
 from backend.security import hash_password, verify_password
 from backend.auth import create_access_token, verify_access_token
+from backend.services.document_processor import process_document
 
 from rag.retriever import retrieve_documents
 from rag.generator import generate_answer
@@ -295,25 +296,49 @@ async def upload_document(
     document = Document(
         user_id=current_user.id,
         filename=original_filename,
-        file_path=str(file_path)
+        file_path=str(file_path),
+        status="Processing"
     )
 
     db.add(document)
     db.commit()
     db.refresh(document)
 
+
     # ----------------------------------------------
     # 11. Return upload response
     # ----------------------------------------------
 
+    try:
+        process_document(
+            str(file_path),
+            original_filename
+        )
+
+        document.status = "Ready"
+        db.commit()
+
+    except Exception:
+        document.status = "Failed"
+        db.commit()
+
+        raise HTTPException(
+            status_code=500,
+            detail="Document processing failed"
+        )
+
+    # ----------------------------------------------
+    # 12. Return upload response
+    # ----------------------------------------------
+
     return {
-        "message": "PDF uploaded successfully",
+        "message": "PDF uploaded and processed successfully",
         "document_id": document.id,
         "filename": original_filename,
         "pages": page_count,
+        "status": document.status,
         "file_path": str(file_path)
     }
-
 
 # --------------------------------------------------
 # Document Query

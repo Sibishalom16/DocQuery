@@ -34,6 +34,7 @@ class Document(Base):
     )
     filename = Column(String, nullable=False)
     file_path = Column(String, nullable=False)
+    status = Column(String, nullable=False, default="Processing")
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     user = relationship(
