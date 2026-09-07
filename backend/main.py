@@ -384,3 +384,25 @@ def query_document(
         "answer": answer,
         "sources": sources
     }
+
+
+@app.get("/documents")
+def list_documents(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    documents = db.query(Document).filter(
+        Document.user_id == current_user.id
+    ).order_by(
+        Document.created_at.desc()
+    ).all()
+
+    return [
+        {
+            "id": document.id,
+            "filename": document.filename,
+            "status": document.status,
+            "created_at": document.created_at
+        }
+        for document in documents
+    ]
