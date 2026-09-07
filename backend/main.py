@@ -1,6 +1,11 @@
+from pathlib import Path
+from uuid import uuid4
+
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+from pypdf import PdfReader
+
 from database.connection import SessionLocal
 from database.models import User, Document
 from backend.schemas import UserRegister, UserLogin, QueryRequest
@@ -16,13 +21,33 @@ app = FastAPI(title="DocQuery API")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
 
+# --------------------------------------------------
+# File Upload Configuration
+# --------------------------------------------------
+
+UPLOAD_DIR = Path("data/uploads")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+
+
+# --------------------------------------------------
+# Database Dependency
+# --------------------------------------------------
+
 def get_db():
     db = SessionLocal()
+
     try:
         yield db
+
     finally:
         db.close()
 
+
+# --------------------------------------------------
+# Authentication
+# --------------------------------------------------
 
 def get_current_user(
     token: str = Depends(oauth2_scheme),
@@ -49,10 +74,20 @@ def get_current_user(
     return user
 
 
+# --------------------------------------------------
+# Root Endpoint
+# --------------------------------------------------
+
 @app.get("/")
 def root():
-    return {"message": "DocQuery API is running"}
+    return {
+        "message": "DocQuery API is running"
+    }
 
+
+# --------------------------------------------------
+# User Registration
+# --------------------------------------------------
 
 @app.post("/register")
 def register(
@@ -84,6 +119,10 @@ def register(
         "user_id": new_user.id
     }
 
+
+# --------------------------------------------------
+# User Login
+# --------------------------------------------------
 
 @app.post("/login")
 def login(
@@ -120,6 +159,10 @@ def login(
     }
 
 
+# --------------------------------------------------
+# Current User
+# --------------------------------------------------
+
 @app.get("/me")
 def get_me(
     current_user: User = Depends(get_current_user)
@@ -131,39 +174,150 @@ def get_me(
     }
 
 
+# --------------------------------------------------
+# PDF Upload
+# --------------------------------------------------
+
 @app.post("/documents/upload")
 async def upload_document(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    if file.content_type != "application/pdf":
+    # ----------------------------------------------
+    # 1. Check whether a file was selected
+    # ----------------------------------------------
+
+    if not file.filename:
+        raise HTTPException(
+            status_code=400,
+            detail="No file selected"
+        )
+
+    original_filename = Path(file.filename).name
+
+    # ----------------------------------------------
+    # 2. Validate file extension
+    # ----------------------------------------------
+
+    if Path(original_filename).suffix.lower() != ".pdf":
         raise HTTPException(
             status_code=400,
             detail="Only PDF files are allowed"
         )
 
-    file_path = f"data/uploads/{file.filename}"
+    # ----------------------------------------------
+    # 3. Validate MIME type
+    # ----------------------------------------------
 
-    with open(file_path, "wb") as buffer:
-        buffer.write(await file.read())
+    allowed_content_types = {
+        "application/pdf",
+        "application/x-pdf"
+    }
+
+    if file.content_type not in allowed_content_types:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid file type. Please upload a PDF file."
+        )
+
+    # ----------------------------------------------
+    # 4. Read uploaded file
+    # ----------------------------------------------
+
+    content = await file.read()
+
+    # ----------------------------------------------
+    # 5. Validate file size
+    # ----------------------------------------------
+
+    if len(content) == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Uploaded file is empty"
+        )
+
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail="File size must not exceed 10 MB"
+        )
+
+    # ----------------------------------------------
+    # 6. Validate PDF file signature
+    # ----------------------------------------------
+
+    if not content.startswith(b"%PDF"):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid PDF file"
+        )
+
+    # ----------------------------------------------
+    # 7. Generate unique filename
+    # ----------------------------------------------
+
+    unique_filename = f"{uuid4().hex}_{original_filename}"
+
+    file_path = UPLOAD_DIR / unique_filename
+
+    # ----------------------------------------------
+    # 8. Save the file temporarily
+    # ----------------------------------------------
+
+    try:
+        with open(file_path, "wb") as buffer:
+            buffer.write(content)
+
+        # ------------------------------------------
+        # 9. Verify that PDF is readable
+        # ------------------------------------------
+
+        reader = PdfReader(str(file_path))
+
+        page_count = len(reader.pages)
+
+        if page_count == 0:
+            raise ValueError("PDF contains no pages")
+
+    except Exception:
+        file_path.unlink(missing_ok=True)
+
+        raise HTTPException(
+            status_code=400,
+            detail="The uploaded file is not a valid or readable PDF"
+        )
+
+    # ----------------------------------------------
+    # 10. Create database record
+    # ----------------------------------------------
 
     document = Document(
         user_id=current_user.id,
-        filename=file.filename,
-        file_path=file_path
+        filename=original_filename,
+        file_path=str(file_path)
     )
 
     db.add(document)
     db.commit()
     db.refresh(document)
 
+    # ----------------------------------------------
+    # 11. Return upload response
+    # ----------------------------------------------
+
     return {
-        "message": "File uploaded successfully",
+        "message": "PDF uploaded successfully",
         "document_id": document.id,
-        "filename": document.filename
+        "filename": original_filename,
+        "pages": page_count,
+        "file_path": str(file_path)
     }
 
+
+# --------------------------------------------------
+# Document Query
+# --------------------------------------------------
 
 @app.post("/query")
 def query_document(
