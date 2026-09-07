@@ -16,7 +16,7 @@ from backend.services.document_processor import process_document
 
 from rag.retriever import retrieve_documents
 from rag.generator import generate_answer
-
+from rag.vector_store import get_vector_store, delete_documents
 
 
 
@@ -432,3 +432,48 @@ def search_documents(
         }
         for document in documents
     ]
+
+@app.delete("/documents/{document_id}")
+def delete_document(
+    document_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    document = db.query(Document).filter(
+        Document.id == document_id,
+        Document.user_id == current_user.id
+    ).first()
+
+    if document is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found"
+        )
+
+    # Delete chunks from ChromaDB
+    collection = get_vector_store()
+
+    chroma_results = collection.get(
+        where={"document_name": document.filename}
+    )
+
+    if chroma_results["ids"]:
+        delete_documents(
+            collection,
+            chroma_results["ids"]
+        )
+
+    # Delete PDF file
+    file_path = Path(document.file_path)
+
+    if file_path.exists():
+        file_path.unlink()
+
+    # Delete database record
+    db.delete(document)
+    db.commit()
+
+    return {
+        "message": "Document deleted successfully",
+        "document_id": document_id
+    }

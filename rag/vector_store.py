@@ -30,3 +30,8 @@ def search_documents(collection, query_embedding, top_k=5):
     )
 
     return results
+
+
+def delete_documents(collection, ids):
+    """Delete document chunks from ChromaDB."""
+    collection.delete(ids=ids)
