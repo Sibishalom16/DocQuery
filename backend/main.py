@@ -4,6 +4,7 @@ from uuid import uuid4
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from pypdf import PdfReader
 
 from database.connection import SessionLocal
@@ -15,6 +16,8 @@ from backend.services.document_processor import process_document
 
 from rag.retriever import retrieve_documents
 from rag.generator import generate_answer
+
+
 
 
 app = FastAPI(title="DocQuery API")
@@ -393,6 +396,29 @@ def list_documents(
 ):
     documents = db.query(Document).filter(
         Document.user_id == current_user.id
+    ).order_by(
+        Document.created_at.desc()
+    ).all()
+
+    return [
+        {
+            "id": document.id,
+            "filename": document.filename,
+            "status": document.status,
+            "created_at": document.created_at
+        }
+        for document in documents
+    ]
+
+@app.get("/documents/search")
+def search_documents(
+    query: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    documents = db.query(Document).filter(
+        Document.user_id == current_user.id,
+        func.lower(Document.filename).contains(query.lower())
     ).order_by(
         Document.created_at.desc()
     ).all()
