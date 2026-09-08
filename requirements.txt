@@ -158,3 +158,5 @@ yarl==1.24.5
 zstandard==0.25.0
 python-multipart==0.0.32
 sentence-transformers
+streamlit
+requests
