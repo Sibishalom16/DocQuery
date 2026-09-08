@@ -5,7 +5,7 @@ from rag.embeddings import generate_embeddings
 from rag.vector_store import get_vector_store, add_documents
 
 
-def process_document(file_path, filename):
+def process_document(file_path, filename, document_id, user_id):
     # Extract text from PDF
     pages = extract_text_from_pdf(file_path)
 
@@ -15,7 +15,9 @@ def process_document(file_path, filename):
     # Add metadata
     metadata_chunks = add_metadata(
         chunks,
-        filename
+        filename,
+        document_id,
+        user_id
     )
 
     # Prepare data
@@ -30,7 +32,7 @@ def process_document(file_path, filename):
     ]
 
     ids = [
-        f"{filename}_{metadata['chunk_id']}"
+        f"{document_id}_{metadata['chunk_id']}"
         for metadata in metadatas
     ]
 

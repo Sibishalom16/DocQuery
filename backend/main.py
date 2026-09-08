@@ -315,7 +315,9 @@ async def upload_document(
     try:
         process_document(
             str(file_path),
-            original_filename
+            original_filename,
+            document.id,
+            current_user.id
         )
 
         document.status = "Ready"
@@ -454,7 +456,7 @@ def delete_document(
     collection = get_vector_store()
 
     chroma_results = collection.get(
-        where={"document_name": document.filename}
+        where={"document_id": document.id}
     )
 
     if chroma_results["ids"]:
