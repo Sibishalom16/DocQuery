@@ -470,7 +470,6 @@ def render_navbar():
         if st.button("Get Started", use_container_width=True, type="primary"):
             st.info("Getting started flow coming soon.")
 
-
 # ---------------------------------------------------------
 # HERO
 # ---------------------------------------------------------
