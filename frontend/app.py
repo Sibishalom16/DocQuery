@@ -464,11 +464,11 @@ def render_navbar():
 
     with login_col:
         if st.button("Login", use_container_width=True, type="secondary"):
-            st.info("Login page coming soon.")
+            st.switch_page("pages/login.py")
 
     with start_col:
         if st.button("Get Started", use_container_width=True, type="primary"):
-            st.info("Getting started flow coming soon.")
+            st.switch_page("pages/signup.py")
 
 # ---------------------------------------------------------
 # HERO
@@ -511,7 +511,7 @@ def render_hero():
                 use_container_width=True,
                 type="primary",
             ):
-                st.info("Getting started flow coming soon.")
+                st.switch_page("pages/signup.py")
 
         with b2:
             if st.button(

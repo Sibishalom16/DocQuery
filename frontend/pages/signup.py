@@ -3,7 +3,7 @@ import requests
 import textwrap
 
 st.set_page_config(
-    page_title="DocQuery - Login",
+    page_title="DocQuery - Sign Up",
     page_icon="💬",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -65,10 +65,10 @@ def inject_login_css():
     [data-testid="stMain"] {
         display: flex !important;
         flex-direction: column !important;
-        justify-content: center !important;
+        justify-content: flex-start !important;
         align-items: center !important;
         min-height: 100vh !important;
-        padding: 20px 16px !important;
+        padding: 40px 16px !important;
         box-sizing: border-box !important;
         overflow-x: hidden !important;
     }
@@ -294,6 +294,41 @@ def inject_login_css():
 
 
 
+    /* Secondary login button */
+    button[kind="secondary"] {
+        background: transparent !important;
+        color: #94a3b8 !important;
+        border: 1px solid rgba(148, 163, 184, 0.25) !important;
+        border-radius: 8px !important;
+        min-height: 38px !important;
+        height: 38px !important;
+        font-size: 0.8rem !important;
+        font-weight: 500 !important;
+        margin-top: 0 !important;
+        transition: all 0.2s ease !important;
+    }
+
+    button[kind="secondary"]:hover {
+        background: rgba(255, 255, 255, 0.04) !important;
+        border-color: rgba(148, 163, 184, 0.4) !important;
+        color: #f8fafc !important;
+    }
+
+    /* spacing adjustments for bottom navigation */
+    .login-nav-text {
+        text-align: center; 
+        color: #64748b; 
+        font-size: 0.78rem;
+        padding-top: 10px;
+        padding-bottom: 6px;
+        margin: 0;
+        line-height: 1;
+    }
+    
+    div[data-testid="stMarkdownContainer"] p {
+        margin-bottom: 0 !important;
+    }
+
     /* RIGHT COLUMN ILLUSTRATION */
     .visual-wrap {
         position: relative;
@@ -302,6 +337,7 @@ def inject_login_css():
         align-items: center;
         justify-content: center;
         width: 100%;
+        margin-top: -30px;
     }
 
     .visual-stage {
@@ -524,52 +560,65 @@ def login_page():
         st.html('<div class="form-box">')
 
         st.html("""
-        <div class="login-header">Welcome back! 👋</div>
-        <div class="login-subtitle">Login to your account</div>
+        <div class="login-header">Create your account 👋</div>
+        <div class="login-subtitle">Sign up to get started with DocQuery</div>
         """)
 
+        name = st.text_input("Full name", placeholder="Your name")
         email = st.text_input("Email address", placeholder="you@example.com")
         password = st.text_input("Password", type="password", placeholder="••••••••")
+        confirm_password = st.text_input(
+            "Confirm password",
+            type="password",
+            placeholder="••••••••"
+        )
 
-        options_left, options_right = st.columns([1, 1], vertical_alignment="center")
-        with options_left:
-            st.checkbox("Remember me")
-        with options_right:
-            st.html('<div style="display:flex; justify-content:flex-end;">')
-            if st.button("Forgot password?", type="tertiary"):
-                st.info("Password recovery feature coming soon.")
-            st.html('</div>')
+        st.html("""
+        <div style="margin: 2px 0 16px 0; color: #64748b; font-size: 0.72rem;">
+            Use at least 8 characters for your password.
+        </div>
+        """)
 
-        if st.button("Login", use_container_width=True, type="primary"):
-            if not email or not password:
-                st.error("Please enter both email and password.")
+        if st.button("Create account", use_container_width=True, type="primary"):
+            if not name or not email or not password or not confirm_password:
+                st.error("Please fill in all fields.")
+            elif password != confirm_password:
+                st.error("Passwords do not match.")
+            elif len(password) < 8:
+                st.error("Password must be at least 8 characters.")
             else:
-                with st.spinner("Authenticating..."):
+                with st.spinner("Creating your account..."):
                     try:
                         response = requests.post(
-                            "http://127.0.0.1:8000/login",
-                            json={"email": email, "password": password},
+                            "http://127.0.0.1:8000/register",
+                            json={
+                                "name": name,
+                                "email": email,
+                                "password": password
+                            },
                             timeout=5
                         )
                         if response.status_code == 200:
-                            st.session_state["access_token"] = response.json().get("access_token")
-                            st.success("Login successful!")
-                        elif response.status_code == 401:
-                            st.error("Invalid email or password.")
+                            st.success("Account created successfully! Please login.")
+                        elif response.status_code == 400:
+                            detail = response.json().get("detail", "Unable to create account.")
+                            if "already registered" in str(detail).lower():
+                                st.error("This email is already registered.")
+                            else:
+                                st.error(str(detail))
                         else:
-                            st.error("Login service unavailable.")
+                            st.error("Registration service unavailable.")
                     except requests.exceptions.RequestException:
                         st.error("Unable to connect to the authentication server.")
 
 
         st.markdown(
-            '<div style="text-align:center; color:#64748b; font-size:0.78rem;">'
-            "Don't have an account?</div>",
+            '<div class="login-nav-text">Already have an account?</div>',
             unsafe_allow_html=True
         )
-
-        if st.button("Sign up", key="go_signup", use_container_width=True):
-            st.switch_page("pages/signup.py")
+        
+        if st.button("Login", key="go_login", use_container_width=True):
+            st.switch_page("pages/login.py")
 
         st.html('</div>')
 
