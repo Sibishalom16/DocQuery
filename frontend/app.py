@@ -36,41 +36,92 @@ def inject_custom_css():
         color: #f8fafc !important;
     }
 
-    /* Animations */
+
+    /* -----------------------------------------------------
+       ANIMATIONS
+    ----------------------------------------------------- */
+
     @keyframes fadeUp {
-        0% { opacity: 0; transform: translateY(20px); }
-        100% { opacity: 1; transform: translateY(0); }
+        0% {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        100% {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     @keyframes illusEntrance {
-        0% { opacity: 0; transform: scale(0.96) translateY(20px); }
-        100% { opacity: 1; transform: scale(1) translateY(0); }
+        0% {
+            opacity: 0;
+            transform: scale(0.96) translateY(20px);
+        }
+
+        100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
     }
 
     @keyframes docFloat {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-7px); }
+        0%, 100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-7px);
+        }
     }
 
     @keyframes dotPulse {
-        0%, 100% { opacity: 0.7; transform: scale(0.95); box-shadow: 0 0 4px rgba(0, 216, 255, 0.2); }
-        50% { opacity: 1; transform: scale(1.15); box-shadow: 0 0 12px rgba(0, 216, 255, 0.6); }
+        0%, 100% {
+            opacity: 0.7;
+            transform: scale(0.95);
+            box-shadow: 0 0 4px rgba(0, 216, 255, 0.2);
+        }
+
+        50% {
+            opacity: 1;
+            transform: scale(1.15);
+            box-shadow: 0 0 12px rgba(0, 216, 255, 0.6);
+        }
     }
 
     @keyframes borderGlow {
-        0%, 100% { box-shadow: 0 0 0 rgba(0, 216, 255, 0); border-color: rgba(148, 163, 184, 0.09); }
-        50% { box-shadow: 0 0 14px rgba(0, 216, 255, 0.15); border-color: rgba(0, 216, 255, 0.35); }
+        0%, 100% {
+            box-shadow: 0 0 0 rgba(0, 216, 255, 0);
+            border-color: rgba(148, 163, 184, 0.09);
+        }
+
+        50% {
+            box-shadow: 0 0 14px rgba(0, 216, 255, 0.15);
+            border-color: rgba(0, 216, 255, 0.35);
+        }
     }
 
     @media (prefers-reduced-motion: reduce) {
-        .hero-title, .hero-highlight, .hero-subtitle, button[kind="primary"], button[kind="secondary"], .hero-illus-wrapper, .illus, .ready-dot, .answer-panel {
+        .hero-title,
+        .hero-highlight,
+        .hero-subtitle,
+        button[kind="primary"],
+        button[kind="secondary"],
+        .hero-illus-wrapper,
+        .illus,
+        .ready-dot,
+        .answer-panel {
             animation: none !important;
             transform: none !important;
             opacity: 1 !important;
         }
     }
 
-    /* Streamlit buttons */
+
+    /* -----------------------------------------------------
+       STREAMLIT BUTTONS
+    ----------------------------------------------------- */
+
     button[kind="primary"] {
         background: #00d8ff !important;
         color: #07111f !important;
@@ -105,7 +156,11 @@ def inject_custom_css():
         transform: translateY(-2px);
     }
 
-    /* Hero */
+
+    /* -----------------------------------------------------
+       HERO
+    ----------------------------------------------------- */
+
     .hero-wrap {
         padding-top: 3.5rem;
     }
@@ -138,7 +193,11 @@ def inject_custom_css():
         animation: fadeUp 0.6s ease-out 0.2s backwards;
     }
 
-    /* Navbar */
+
+    /* -----------------------------------------------------
+       NAVBAR
+    ----------------------------------------------------- */
+
     .brand {
         display: flex;
         align-items: center;
@@ -161,29 +220,100 @@ def inject_custom_css():
         box-shadow: 0 5px 18px rgba(139, 92, 246, 0.18);
     }
 
-    .nav-links {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 2rem;
-        height: 40px;
-    }
 
-    .nav-links a {
+    /* -----------------------------------------------------
+       NAVBAR BUTTONS
+    ----------------------------------------------------- */
+
+    .nav-button button {
+        border: none !important;
+        background: transparent !important;
         color: #94a3b8 !important;
-        text-decoration: none !important;
-        font-size: 0.88rem;
-        font-weight: 500;
-        transition: all 0.2s ease !important;
-        display: inline-block;
+        font-size: 0.88rem !important;
+        font-weight: 500 !important;
+        min-height: 40px !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        animation: none !important;
     }
 
-    .nav-links a:hover {
+    .nav-button button:hover {
         color: #ffffff !important;
+        border: none !important;
+        background: transparent !important;
         transform: translateY(-1px);
+        box-shadow: none !important;
     }
 
-    /* Illustration */
+
+    /* -----------------------------------------------------
+       MODALS
+    ----------------------------------------------------- */
+
+    .info-modal {
+        padding: 4px 2px 10px 2px;
+        animation: fadeUp 0.25s ease-out;
+    }
+
+    .info-modal-title {
+        color: #f8fafc;
+        font-size: 1.35rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .info-modal-subtitle {
+        color: #64748b;
+        font-size: 0.82rem;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+
+    .info-modal-section {
+        margin-top: 17px;
+        padding: 13px 14px;
+        background: rgba(255, 255, 255, 0.025);
+        border: 1px solid rgba(148, 163, 184, 0.09);
+        border-radius: 9px;
+    }
+
+    .info-modal-section-title {
+        color: #e2e8f0;
+        font-size: 0.92rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .info-modal-text {
+        color: #94a3b8;
+        font-size: 0.84rem;
+        line-height: 1.6;
+    }
+
+    .info-modal-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        margin-right: 8px;
+        border-radius: 6px;
+        background: rgba(0, 216, 255, 0.10);
+        color: #00d8ff;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    .info-modal-highlight {
+        color: #00d8ff;
+        font-weight: 600;
+    }
+
+
+    /* -----------------------------------------------------
+       ILLUSTRATION
+    ----------------------------------------------------- */
+
     .hero-illus-wrapper {
         width: 100%;
         display: flex;
@@ -271,9 +401,17 @@ def inject_custom_css():
         margin-top: 14px;
     }
 
-    .doc-line.short { width: 62%; }
-    .doc-line.medium { width: 82%; }
-    .doc-line.long { width: 94%; }
+    .doc-line.short {
+        width: 62%;
+    }
+
+    .doc-line.medium {
+        width: 82%;
+    }
+
+    .doc-line.long {
+        width: 94%;
+    }
 
     .ready-row {
         display: flex;
@@ -354,7 +492,11 @@ def inject_custom_css():
         text-overflow: ellipsis;
     }
 
-    /* Feature cards */
+
+    /* -----------------------------------------------------
+       FEATURE CARDS
+    ----------------------------------------------------- */
+
     .features {
         margin-top: 40px;
     }
@@ -408,8 +550,13 @@ def inject_custom_css():
         transition: text-shadow 0.25s ease;
     }
 
-    .cyan-symbol { color: #00d8ff; }
-    .purple-symbol { color: #a855f7; }
+    .cyan-symbol {
+        color: #00d8ff;
+    }
+
+    .purple-symbol {
+        color: #a855f7;
+    }
 
     .feature-title {
         color: #f8fafc;
@@ -424,56 +571,345 @@ def inject_custom_css():
         line-height: 1.55;
     }
 
+
+    /* -----------------------------------------------------
+       RESPONSIVE
+    ----------------------------------------------------- */
+
     @media (max-width: 850px) {
-        .nav-links { gap: 0.8rem; }
-        .hero-wrap { padding-top: 1.5rem; }
-        .illus { height: 300px; margin-top: 1rem; }
-        .doc { width: 310px; }
+        .nav-links {
+            gap: 0.8rem;
+        }
+
+        .hero-wrap {
+            padding-top: 1.5rem;
+        }
+
+        .illus {
+            height: 300px;
+            margin-top: 1rem;
+        }
+
+        .doc {
+            width: 310px;
+        }
     }
+
     </style>
     """
+
     st.markdown(textwrap.dedent(css), unsafe_allow_html=True)
+
+
+# ---------------------------------------------------------
+# FEATURES MODAL
+# ---------------------------------------------------------
+@st.dialog("Features")
+def show_features_modal():
+    st.html(
+        """
+        <div class="info-modal">
+
+            <div class="info-modal-title">
+                What DocQuery offers
+            </div>
+
+            <div class="info-modal-subtitle">
+                Simple, secure and trustworthy document question answering.
+            </div>
+
+            <div class="info-modal-section">
+
+                <div class="info-modal-section-title">
+                    🔒 Secure & Private
+                </div>
+
+                <div class="info-modal-text">
+                    Your documents are handled securely while DocQuery helps
+                    you find the information you need.
+                </div>
+
+            </div>
+
+            <div class="info-modal-section">
+
+                <div class="info-modal-section-title">
+                    ✦ AI-Powered
+                </div>
+
+                <div class="info-modal-text">
+                    Ask questions in natural language and let AI find the most
+                    relevant information from your uploaded documents.
+                </div>
+
+            </div>
+
+            <div class="info-modal-section">
+
+                <div class="info-modal-section-title">
+                    ✓ Source Verified
+                </div>
+
+                <div class="info-modal-text">
+                    Every answer is connected to its source document and page,
+                    making it easier to verify the information.
+                </div>
+
+            </div>
+
+        </div>
+        """
+    )
+
+    if st.button(
+        "Close",
+        key="close_features",
+        use_container_width=True,
+        type="secondary",
+    ):
+        st.rerun()
+
+
+# ---------------------------------------------------------
+# HOW IT WORKS MODAL
+# ---------------------------------------------------------
+@st.dialog("How It Works")
+def show_how_it_works_modal():
+    st.html(
+        """
+        <div class="info-modal">
+
+            <div class="info-modal-title">
+                How DocQuery works
+            </div>
+
+            <div class="info-modal-subtitle">
+                From document upload to verified answers in four simple steps.
+            </div>
+
+            <div class="info-modal-section">
+
+                <div class="info-modal-section-title">
+                    <span class="info-modal-number">1</span>
+                    Upload a document
+                </div>
+
+                <div class="info-modal-text">
+                    Upload your PDF or organizational document to DocQuery.
+                    The document is processed and prepared for searching.
+                </div>
+
+            </div>
+
+            <div class="info-modal-section">
+
+                <div class="info-modal-section-title">
+                    <span class="info-modal-number">2</span>
+                    Ask questions
+                </div>
+
+                <div class="info-modal-text">
+                    Ask questions about your document using natural language.
+                    You do not need to search through pages manually.
+                </div>
+
+            </div>
+
+            <div class="info-modal-section">
+
+                <div class="info-modal-section-title">
+                    <span class="info-modal-number">3</span>
+                    Get answers
+                </div>
+
+                <div class="info-modal-text">
+                    DocQuery finds the relevant parts of your document and
+                    generates an answer grounded in the available information.
+                </div>
+
+            </div>
+
+            <div class="info-modal-section">
+
+                <div class="info-modal-section-title">
+                    <span class="info-modal-number">4</span>
+                    Verify the source
+                </div>
+
+                <div class="info-modal-text">
+                    Each answer points to the relevant document and page,
+                    allowing you to quickly verify where the answer came from.
+                </div>
+
+            </div>
+
+        </div>
+        """
+    )
+
+    if st.button(
+        "Close",
+        key="close_how_it_works",
+        use_container_width=True,
+        type="secondary",
+    ):
+        st.rerun()
+
+
+# ---------------------------------------------------------
+# ABOUT MODAL
+# ---------------------------------------------------------
+@st.dialog("About DocQuery")
+def show_about_modal():
+    st.html(
+        """
+        <div class="info-modal">
+
+            <div class="info-modal-title">
+                About DocQuery
+            </div>
+
+            <div class="info-modal-subtitle">
+                Making complex documents easier to understand.
+            </div>
+
+            <div class="info-modal-section">
+
+                <div class="info-modal-text">
+                    <strong style="color:#f8fafc;">
+                        DocQuery
+                    </strong>
+                    is an AI-powered document question-answering platform
+                    designed to help users find information quickly from
+                    their uploaded documents.
+                </div>
+
+            </div>
+
+            <div class="info-modal-section">
+
+                <div class="info-modal-text">
+                    Instead of manually searching through long and complex
+                    documents, users can ask questions in natural language
+                    and receive relevant answers.
+                </div>
+
+            </div>
+
+            <div class="info-modal-section">
+
+                <div class="info-modal-text">
+                    DocQuery focuses on making answers more
+                    <span class="info-modal-highlight">
+                        reliable and verifiable
+                    </span>
+                    by showing the document and page source behind the answer.
+                </div>
+
+            </div>
+
+        </div>
+        """
+    )
+
+    if st.button(
+        "Close",
+        key="close_about",
+        use_container_width=True,
+        type="secondary",
+    ):
+        st.rerun()
 
 
 # ---------------------------------------------------------
 # NAVBAR
 # ---------------------------------------------------------
 def render_navbar():
+
     left, middle, login_col, start_col = st.columns(
         [1.45, 4.4, 1, 1],
         vertical_alignment="center",
     )
 
+    # Brand
     with left:
-        st.html("""
-        <div class="brand">
-            <span class="brand-icon">💬</span>
-            <span>DocQuery</span>
-        </div>
-        """)
+        st.html(
+            """
+            <div class="brand">
+                <span class="brand-icon">💬</span>
+                <span>DocQuery</span>
+            </div>
+            """
+        )
 
+    # Navigation links
     with middle:
-        st.html("""
-        <div class="nav-links">
-            <a href="#features">Features</a>
-            <a href="#how-it-works">How It Works</a>
-            <a href="#about">About</a>
-            <a href="#pricing">Pricing</a>
-        </div>
-        """)
 
+        nav1, nav2, nav3 = st.columns(
+            [1, 1.35, 0.8],
+            vertical_alignment="center",
+        )
+
+        with nav1:
+            st.markdown('<div class="nav-button">', unsafe_allow_html=True)
+
+            if st.button(
+                "Features",
+                key="nav_features",
+                use_container_width=True,
+            ):
+                show_features_modal()
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        with nav2:
+            st.markdown('<div class="nav-button">', unsafe_allow_html=True)
+
+            if st.button(
+                "How It Works",
+                key="nav_how_it_works",
+                use_container_width=True,
+            ):
+                show_how_it_works_modal()
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        with nav3:
+            st.markdown('<div class="nav-button">', unsafe_allow_html=True)
+
+            if st.button(
+                "About",
+                key="nav_about",
+                use_container_width=True,
+            ):
+                show_about_modal()
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+    # Login
     with login_col:
-        if st.button("Login", use_container_width=True, type="secondary"):
+        if st.button(
+            "Login",
+            use_container_width=True,
+            type="secondary",
+        ):
             st.switch_page("pages/login.py")
 
+    # Get Started
     with start_col:
-        if st.button("Get Started", use_container_width=True, type="primary"):
+        if st.button(
+            "Get Started",
+            use_container_width=True,
+            type="primary",
+        ):
             st.switch_page("pages/signup.py")
+
 
 # ---------------------------------------------------------
 # HERO
 # ---------------------------------------------------------
 def render_hero():
+
     st.html('<div class="hero-wrap"></div>')
 
     hero_left, hero_right = st.columns(
@@ -481,29 +917,37 @@ def render_hero():
         vertical_alignment="center",
     )
 
+    # Hero left
     with hero_left:
-        st.html("""
-        <div>
-            <div class="hero-title">
-                Chat with your<br>
-                documents.
+
+        st.html(
+            """
+            <div>
+                <div class="hero-title">
+                    Chat with your<br>
+                    documents.
+                </div>
+
+                <div class="hero-highlight">
+                    Get answers<br>
+                    you can verify.
+                </div>
+
+                <div class="hero-subtitle">
+                    Upload your organizational documents and ask questions in
+                    natural language. DocQuery finds the relevant information
+                    and shows you where it came from.
+                </div>
             </div>
+            """
+        )
 
-            <div class="hero-highlight">
-                Get answers<br>
-                you can verify.
-            </div>
+        b1, b2, empty = st.columns(
+            [1.15, 1.55, 0.8],
+            vertical_alignment="center",
+        )
 
-            <div class="hero-subtitle">
-                Upload your organizational documents and ask questions in natural
-                language. DocQuery finds the relevant information and shows you
-                where it came from.
-            </div>
-        </div>
-        """)
-
-        b1, b2, empty = st.columns([1.15, 1.55, 0.8], vertical_alignment="center")
-
+        # Hero Get Started
         with b1:
             if st.button(
                 "Get Started",
@@ -513,6 +957,7 @@ def render_hero():
             ):
                 st.switch_page("pages/signup.py")
 
+        # Hero How It Works
         with b2:
             if st.button(
                 "See How It Works →",
@@ -520,50 +965,86 @@ def render_hero():
                 use_container_width=True,
                 type="secondary",
             ):
-                st.info("Interactive demo coming soon.")
+                show_how_it_works_modal()
 
+    # Hero illustration
     with hero_right:
-        st.html("""
-        <div class="hero-illus-wrapper">
-            <div class="illus">
-                <div class="doc doc-back"></div>
-            <div class="doc doc-mid"></div>
 
-            <div class="doc doc-front">
-                <div class="pdf-row">
-                    <span class="pdf-badge">pdf</span>
-                    <span class="file-icon">▱</span>
-                </div>
+        st.html(
+            """
+            <div class="hero-illus-wrapper">
 
-                <div class="doc-line long"></div>
-                <div class="doc-line medium"></div>
-                <div class="doc-line long"></div>
+                <div class="illus">
 
-                <div class="ready-row">
-                    <span class="ready-dot"></span>
-                    <div>
-                        <div class="ready-text">Your document is ready</div>
-                        <div class="ready-subtext">Ask questions and find verified answers</div>
+                    <div class="doc doc-back"></div>
+
+                    <div class="doc doc-mid"></div>
+
+                    <div class="doc doc-front">
+
+                        <div class="pdf-row">
+                            <span class="pdf-badge">pdf</span>
+                            <span class="file-icon">▱</span>
+                        </div>
+
+                        <div class="doc-line long"></div>
+
+                        <div class="doc-line medium"></div>
+
+                        <div class="doc-line long"></div>
+
+                        <div class="ready-row">
+
+                            <span class="ready-dot"></span>
+
+                            <div>
+
+                                <div class="ready-text">
+                                    Your document is ready
+                                </div>
+
+                                <div class="ready-subtext">
+                                    Ask questions and find verified answers
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div class="answer-panel">
+
+                            <div class="answer-icon">
+                                ⌕
+                            </div>
+
+                            <div class="answer-content">
+
+                                <div class="answer-title">
+                                    Search your document
+                                </div>
+
+                                <div class="answer-query">
+                                    Ask anything about your uploaded PDF
+                                </div>
+
+                            </div>
+
+                        </div>
+
                     </div>
+
                 </div>
 
-                <div class="answer-panel">
-                    <div class="answer-icon">⌕</div>
-                    <div class="answer-content">
-                        <div class="answer-title">Search your document</div>
-                        <div class="answer-query">Ask anything about your uploaded PDF</div>
-                    </div>
-                </div>
-                </div>
             </div>
-        </div>
-        """)
+            """
+        )
 
 
 # ---------------------------------------------------------
 # FEATURE CARDS
 # ---------------------------------------------------------
 def render_feature_cards():
+
     st.html('<div id="features" class="features"></div>')
 
     c1, c2, c3 = st.columns(3)
@@ -572,38 +1053,71 @@ def render_feature_cards():
     ai = '<span class="feature-symbol purple-symbol">✦</span>'
     verified = '<span class="feature-symbol cyan-symbol">✓</span>'
 
+    # Secure & Private
     with c1:
-        st.html(f"""
-        <div class="feature-card">
-            <div class="feature-icon">{shield}</div>
-            <div class="feature-title">Secure &amp; Private</div>
-            <div class="feature-desc">
-                Your data is encrypted and always protected.
-            </div>
-        </div>
-        """)
+        st.html(
+            f"""
+            <div class="feature-card">
 
+                <div class="feature-icon">
+                    {shield}
+                </div>
+
+                <div class="feature-title">
+                    Secure &amp; Private
+                </div>
+
+                <div class="feature-desc">
+                    Your data is encrypted and always protected.
+                </div>
+
+            </div>
+            """
+        )
+
+    # AI Powered
     with c2:
-        st.html(f"""
-        <div class="feature-card">
-            <div class="feature-icon">{ai}</div>
-            <div class="feature-title">AI-Powered</div>
-            <div class="feature-desc">
-                Advanced AI finds accurate answers from your docs.
-            </div>
-        </div>
-        """)
+        st.html(
+            f"""
+            <div class="feature-card">
 
-    with c3:
-        st.html(f"""
-        <div class="feature-card">
-            <div class="feature-icon">{verified}</div>
-            <div class="feature-title">Source Verified</div>
-            <div class="feature-desc">
-                Every answer includes the document and page source.
+                <div class="feature-icon">
+                    {ai}
+                </div>
+
+                <div class="feature-title">
+                    AI-Powered
+                </div>
+
+                <div class="feature-desc">
+                    Advanced AI finds accurate answers from your docs.
+                </div>
+
             </div>
-        </div>
-        """)
+            """
+        )
+
+    # Source Verified
+    with c3:
+        st.html(
+            f"""
+            <div class="feature-card">
+
+                <div class="feature-icon">
+                    {verified}
+                </div>
+
+                <div class="feature-title">
+                    Source Verified
+                </div>
+
+                <div class="feature-desc">
+                    Every answer includes the document and page source.
+                </div>
+
+            </div>
+            """
+        )
 
     st.html('<div style="height: 55px;"></div>')
 
@@ -612,7 +1126,11 @@ def render_feature_cards():
 # MAIN
 # ---------------------------------------------------------
 if __name__ == "__main__":
+
     inject_custom_css()
+
     render_navbar()
+
     render_hero()
+
     render_feature_cards()
