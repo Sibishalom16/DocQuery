@@ -1,5 +1,6 @@
 import streamlit as st
 import textwrap
+import extra_streamlit_components as stx
 
 st.set_page_config(
     page_title="DocQuery",
@@ -7,6 +8,8 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
 )
+
+cookie_manager = stx.CookieManager(key="dashboard_cookies")
 
 
 # ---------------------------------------------------------
@@ -1126,6 +1129,11 @@ def render_feature_cards():
 # MAIN
 # ---------------------------------------------------------
 if __name__ == "__main__":
+
+    # Only redirect if explicitly logged in (session state has token)
+    # Don't redirect based solely on cookie to avoid stale cookie issues
+    if st.session_state.get("access_token"):
+        st.switch_page("pages/dashboard.py")
 
     inject_custom_css()
 

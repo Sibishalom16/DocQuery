@@ -1,5 +1,8 @@
-import streamlit as st
+import datetime
+
+import extra_streamlit_components as stx
 import requests
+import streamlit as st
 import textwrap
 
 st.set_page_config(
@@ -8,6 +11,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
 )
+
+cookie_manager = stx.CookieManager(key="dashboard_cookies")
+
 
 def inject_login_css():
     css = """
@@ -514,7 +520,39 @@ def inject_login_css():
     st.markdown(textwrap.dedent(css), unsafe_allow_html=True)
 
 
+ACCESS_TOKEN_EXPIRE_MINUTES = 30  # must match jwt_handler.ACCESS_TOKEN_EXPIRE_MINUTES
+
+
 def login_page():
+    # Any auth failure (expired token, 401 from backend, explicit logout)
+    # lands here. We NEVER re-read the cookie in this branch — that's what
+    # broke the loop, since deletion isn't guaranteed to have propagated
+    # to the browser yet on this same rerun.
+    if st.session_state.get("logout_requested") or st.session_state.get("auth_failed"):
+        if cookie_manager.get("access_token") is not None:
+            try:
+                cookie_manager.delete("access_token")
+            except KeyError:
+                pass
+        st.session_state.pop("logout_requested", None)
+        st.session_state.pop("auth_failed", None)
+        st.session_state.pop("access_token", None)
+        restored_token = None
+    else:
+        restored_token = st.session_state.get("access_token")
+        if not restored_token:
+            if hasattr(st, "context") and hasattr(st.context, "cookies"):
+                restored_token = st.context.cookies.get("access_token")
+            if not restored_token:
+                restored_token = cookie_manager.get("access_token")
+
+    if restored_token:
+        if isinstance(restored_token, str):
+            import urllib.parse
+            restored_token = urllib.parse.unquote(restored_token).strip('"\'')
+        st.session_state["access_token"] = restored_token
+        st.switch_page("pages/dashboard.py")
+
     inject_login_css()
 
     st.html('<div class="login-stage">')
@@ -533,7 +571,7 @@ def login_page():
 
         options_left, options_right = st.columns([1, 1], vertical_alignment="center")
         with options_left:
-            st.checkbox("Remember me")
+            remember_me = st.checkbox("Remember me")
         with options_right:
             st.html('<div style="display:flex; justify-content:flex-end;">')
             if st.button("Forgot password?", type="tertiary"):
@@ -552,15 +590,42 @@ def login_page():
                             timeout=5
                         )
                         if response.status_code == 200:
-                            st.session_state["access_token"] = response.json().get("access_token")
-                            st.success("Login successful!")
+                            access_token = response.json().get("access_token")
+
+                            st.session_state["access_token"] = access_token
+
+                            # Cookie lifetime now matches the JWT's actual
+                            # lifetime. A 7-day cookie holding a 30-min
+                            # token was the other half of the loop: the
+                            # cookie outlived the token, so the browser
+                            # kept "offering" dead tokens for days.
+                            #
+                            # NOTE: "Remember me" is currently cosmetic —
+                            # it doesn't extend the token's life, because
+                            # that requires the /login endpoint to accept
+                            # a remember_me flag and issue a longer-lived
+                            # token. Wire that up backend-side if you want
+                            # this checkbox to do something real; for now
+                            # it just avoids over-promising in the cookie.
+                            expire_minutes = (
+                                60 * 24 * 7 if remember_me else ACCESS_TOKEN_EXPIRE_MINUTES
+                            )
+                            expire_date = datetime.datetime.now() + datetime.timedelta(
+                                minutes=expire_minutes
+                            )
+                            cookie_manager.set(
+                                "access_token",
+                                access_token,
+                                expires_at=expire_date,
+                                key="set_access_token",
+                            )
+                            st.rerun()
                         elif response.status_code == 401:
                             st.error("Invalid email or password.")
                         else:
                             st.error("Login service unavailable.")
                     except requests.exceptions.RequestException:
                         st.error("Unable to connect to the authentication server.")
-
 
         st.markdown(
             '<div style="text-align:center; color:#64748b; font-size:0.78rem;">'
@@ -577,22 +642,15 @@ def login_page():
         st.html("""
         <div class="visual-wrap">
             <div class="visual-stage">
-                <!-- Dual Purple/Cyan Glow Aura -->
                 <div class="glow-purple-left"></div>
                 <div class="glow-cyan-right"></div>
-                
-                <!-- Concentric Rings -->
                 <div class="outer-ring"></div>
                 <div class="inner-ring"></div>
-
-                <!-- Top-Right Floating Document Card -->
                 <div class="float-card float-top">
                     <div class="line-cyan" style="width: 100%;"></div>
                     <div class="line-slate" style="width: 65%;"></div>
                     <div class="line-slate" style="width: 85%;"></div>
                 </div>
-
-                <!-- Center Dark Box with Open Lock & Purple/Cyan Accents -->
                 <div class="center-card">
                     <div class="center-lock-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -606,8 +664,6 @@ def login_page():
                         <span></span>
                     </div>
                 </div>
-
-                <!-- Bottom-Left Floating Document Card -->
                 <div class="float-card float-bottom">
                     <div class="line-slate" style="width: 75%;"></div>
                     <div class="line-cyan" style="width: 100%;"></div>

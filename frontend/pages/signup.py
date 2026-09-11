@@ -1,6 +1,8 @@
 import streamlit as st
 import requests
 import textwrap
+import extra_streamlit_components as stx
+import datetime
 
 st.set_page_config(
     page_title="DocQuery - Sign Up",
@@ -8,6 +10,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
 )
+
+cookie_manager = stx.CookieManager(key="dashboard_cookies")
+
 
 def inject_login_css():
     css = """
@@ -551,6 +556,11 @@ def inject_login_css():
 
 
 def login_page():
+    # Only redirect if explicitly logged in (session state has token)
+    # Don't redirect based solely on cookie to avoid stale cookie issues
+    if st.session_state.get("access_token"):
+        st.switch_page("pages/dashboard.py")
+
     inject_login_css()
 
     st.html('<div class="login-stage">')
@@ -599,7 +609,24 @@ def login_page():
                             timeout=5
                         )
                         if response.status_code == 200:
-                            st.success("Account created successfully! Please login.")
+                            login_resp = requests.post(
+                                "http://127.0.0.1:8000/login",
+                                json={"email": email, "password": password},
+                                timeout=5
+                            )
+                            if login_resp.status_code == 200:
+                                access_token = login_resp.json().get("access_token")
+                                st.session_state["access_token"] = access_token
+                                expire_date = datetime.datetime.now() + datetime.timedelta(days=7)
+                                cookie_manager.set(
+                                    "access_token",
+                                    access_token,
+                                    expires_at=expire_date,
+                                    key="set_access_token",
+                                )
+                                st.rerun()
+                            else:
+                                st.switch_page("pages/login.py")
                         elif response.status_code == 400:
                             detail = response.json().get("detail", "Unable to create account.")
                             if "already registered" in str(detail).lower():
