@@ -1,7 +1,9 @@
+import logging
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
+from fastapi import FastAPI, Depends, HTTPException, Request, UploadFile, File
+from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -17,6 +19,9 @@ from backend.services.document_processor import process_document
 from rag.retriever import retrieve_documents
 from rag.generator import generate_answer
 from rag.vector_store import get_vector_store, delete_documents
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 
@@ -309,7 +314,7 @@ async def upload_document(
 
 
     # ----------------------------------------------
-    # 11. Return upload response
+    # 11. Process document and update status
     # ----------------------------------------------
 
     try:
@@ -323,7 +328,12 @@ async def upload_document(
         document.status = "Ready"
         db.commit()
 
-    except Exception:
+    except Exception as exc:
+        logger.exception(
+            "Document processing failed for document_id=%s: %s",
+            document.id,
+            exc
+        )
         document.status = "Failed"
         db.commit()
 
@@ -342,7 +352,6 @@ async def upload_document(
         "filename": original_filename,
         "pages": page_count,
         "status": document.status,
-        "file_path": str(file_path)
     }
 
 # --------------------------------------------------
@@ -352,11 +361,25 @@ async def upload_document(
 @app.post("/query")
 def query_document(
     query_data: QueryRequest,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
+    document = db.query(Document).filter(
+        Document.id == query_data.document_id,
+        Document.user_id == current_user.id
+    ).first()
+
+    if not document:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found"
+        )
+
     retrieved_documents = retrieve_documents(
         query_data.question,
-        top_k=5
+        user_id=current_user.id,
+        document_id=query_data.document_id,
+        top_k=20
     )
 
     answer = generate_answer(
@@ -367,21 +390,31 @@ def query_document(
     sources = []
     seen_sources = set()
 
-    for document in retrieved_documents:
-        metadata = document["metadata"]
+    # Sort documents by distance (smaller = closer/more relevant)
+    sorted_docs = sorted(retrieved_documents, key=lambda x: x.get("distance", float('inf')))
 
-        source = (
-            metadata.get("document_name"),
+    for document in sorted_docs:
+        metadata = document.get("metadata", {})
+
+        # Use document_id and page to define a uniquely seen source page
+        source_key = (
+            metadata.get("document_id"),
             metadata.get("page")
         )
 
-        if source not in seen_sources:
-            seen_sources.add(source)
+        if source_key not in seen_sources:
+            seen_sources.add(source_key)
 
             sources.append({
-                "document": source[0],
-                "page": source[1]
+                "document_id": metadata.get("document_id"),
+                "document": metadata.get("document_name"),
+                "page": metadata.get("page"),
+                "section": metadata.get("section")
             })
+
+            # Limit to top 3 most relevant distinct source pages
+            if len(sources) >= 3:
+                break
 
     return {
         "user_id": current_user.id,
@@ -402,15 +435,24 @@ def list_documents(
         Document.created_at.desc()
     ).all()
 
-    return [
-        {
+    result = []
+    for document in documents:
+        page_count = None
+        try:
+            fp = Path(document.file_path)
+            if fp.exists():
+                reader = PdfReader(str(fp))
+                page_count = len(reader.pages)
+        except Exception:
+            pass
+        result.append({
             "id": document.id,
             "filename": document.filename,
             "status": document.status,
-            "created_at": document.created_at
-        }
-        for document in documents
-    ]
+            "created_at": document.created_at,
+            "page_count": page_count,
+        })
+    return result
 
 @app.get("/documents/search")
 def search_documents(
@@ -425,15 +467,93 @@ def search_documents(
         Document.created_at.desc()
     ).all()
 
-    return [
-        {
+    result = []
+    for document in documents:
+        page_count = None
+        try:
+            fp = Path(document.file_path)
+            if fp.exists():
+                reader = PdfReader(str(fp))
+                page_count = len(reader.pages)
+        except Exception:
+            pass
+        result.append({
             "id": document.id,
             "filename": document.filename,
             "status": document.status,
-            "created_at": document.created_at
-        }
-        for document in documents
-    ]
+            "created_at": document.created_at,
+            "page_count": page_count,
+        })
+    return result
+
+
+# --------------------------------------------------
+# Secure PDF File Download / Stream
+# --------------------------------------------------
+
+@app.get("/documents/{document_id}/file")
+def get_document_file(
+    document_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """Stream the original PDF for a document.
+
+    Accepts JWT via:
+      - Authorization: Bearer <token>  (normal API calls / fetch())
+      - ?token=<jwt>                   (iframe src – browsers cannot send custom headers)
+
+    Security: document.user_id must match the authenticated user's id.
+    Never exposes arbitrary filesystem paths from the client.
+    """
+
+    # 1. Try to get token from Authorization header
+
+    auth_header = request.headers.get("Authorization", "")
+    raw_token = None
+    if auth_header.startswith("Bearer "):
+        raw_token = auth_header[len("Bearer "):]
+
+    # 2. Fall back to ?token= query parameter (for iframe src)
+    if not raw_token:
+        raw_token = request.query_params.get("token")
+
+    if not raw_token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    user_id = verify_access_token(raw_token)
+    if user_id is None:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    resolved_user = db.query(User).filter(User.id == user_id).first()
+    if resolved_user is None:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    document = db.query(Document).filter(
+        Document.id == document_id,
+        Document.user_id == resolved_user.id
+    ).first()
+
+    if document is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found or access denied"
+        )
+
+    file_path = Path(document.file_path)
+
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="PDF file not found on server"
+        )
+
+    return FileResponse(
+        path=str(file_path),
+        media_type="application/pdf",
+        filename=document.filename,
+        content_disposition_type="inline",
+    )
 
 @app.delete("/documents/{document_id}")
 def delete_document(

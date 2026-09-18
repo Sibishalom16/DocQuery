@@ -1,6 +1,5 @@
 import streamlit as st
 import textwrap
-import extra_streamlit_components as stx
 
 st.set_page_config(
     page_title="DocQuery",
@@ -9,7 +8,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-cookie_manager = stx.CookieManager(key="dashboard_cookies")
 
 
 # ---------------------------------------------------------

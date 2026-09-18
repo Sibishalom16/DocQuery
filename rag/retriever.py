@@ -2,18 +2,28 @@ from rag.embeddings import generate_embedding
 from rag.vector_store import get_vector_store, search_documents
 
 
-def retrieve_documents(query, top_k=5):
-    """Retrieve the most relevant document chunks for a query."""
+def retrieve_documents(query, user_id, document_id, top_k=20):
+    """Retrieve the most relevant document chunks for a query, isolated by user and document."""
 
     query_embedding = generate_embedding(query)
 
     collection = get_vector_store()
 
+    # Pass where filter based on ChromaDB requirements
+    where_filter = {
+        "$and": [
+            {"user_id": {"$eq": user_id}},
+            {"document_id": {"$eq": document_id}}
+        ]
+    }
+
     results = search_documents(
         collection,
         query_embedding,
-        top_k=top_k
+        top_k=top_k,
+        where=where_filter
     )
+
 
     retrieved_documents = []
 

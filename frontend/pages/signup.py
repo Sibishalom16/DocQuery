@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-cookie_manager = stx.CookieManager(key="dashboard_cookies")
+cookie_manager = stx.CookieManager(key="global_cookie_manager")
 
 
 def inject_login_css():
@@ -617,6 +617,8 @@ def login_page():
                             if login_resp.status_code == 200:
                                 access_token = login_resp.json().get("access_token")
                                 st.session_state["access_token"] = access_token
+                                # Clear skip flag: this is a fresh login
+                                st.session_state.pop("_skip_cookie_restore", None)
                                 expire_date = datetime.datetime.now() + datetime.timedelta(days=7)
                                 cookie_manager.set(
                                     "access_token",

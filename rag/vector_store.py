@@ -13,8 +13,9 @@ def get_vector_store():
 
 
 def add_documents(collection, documents, embeddings, metadatas, ids):
-    """Add document chunks and their embeddings to ChromaDB."""
-    collection.add(
+    """Add (or update) document chunks and their embeddings in ChromaDB.
+    Uses upsert so re-uploading a document never raises a duplicate-ID error."""
+    collection.upsert(
         documents=documents,
         embeddings=embeddings,
         metadatas=metadatas,
@@ -22,11 +23,13 @@ def add_documents(collection, documents, embeddings, metadatas, ids):
     )
 
 
-def search_documents(collection, query_embedding, top_k=5):
-    """Search ChromaDB for the most similar documents."""
+
+def search_documents(collection, query_embedding, top_k=20, where=None):
+    """Search ChromaDB for the most similar documents applying specified filters."""
     results = collection.query(
         query_embeddings=[query_embedding],
-        n_results=top_k
+        n_results=top_k,
+        where=where
     )
 
     return results

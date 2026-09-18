@@ -1,5 +1,4 @@
 import html
-import time
 from datetime import datetime
 
 import extra_streamlit_components as stx
@@ -26,7 +25,7 @@ API_URL = "http://127.0.0.1:8000"
 # =========================================================
 
 cookie_manager = stx.CookieManager(
-    key="dashboard_cookies"
+    key="global_cookie_manager"
 )
 
 
@@ -42,28 +41,19 @@ def read_cookie_token():
     """
 
     try:
-        if hasattr(st, "context") and hasattr(
-            st.context,
-            "cookies",
-        ):
-            token = st.context.cookies.get(
-                "access_token"
-            )
-
+        if hasattr(st, "context") and hasattr(st.context, "cookies"):
+            token = st.context.cookies.get("access_token")
             if token:
-                return token
-
+                import urllib.parse
+                return urllib.parse.unquote(token).strip('"\'')
     except Exception:
         pass
 
     try:
-        token = cookie_manager.get(
-            "access_token"
-        )
-
+        token = cookie_manager.get("access_token")
         if token:
-            return token
-
+            import urllib.parse
+            return urllib.parse.unquote(str(token)).strip('"\'')
     except Exception:
         pass
 
@@ -131,6 +121,12 @@ def go_to_login(reason_is_failure: bool):
     if reason_is_failure:
         st.session_state["auth_failed"] = True
 
+    # This flag tells login.py NOT to re-read the cookie (which would
+    # still hold the now-invalid/deleted token while the browser JS
+    # component hasn't yet propagated the deletion) and bounce
+    # straight back here -> infinite 401 loop.
+    st.session_state["_skip_cookie_restore"] = True
+
     remove_auth_cookie()
 
     st.switch_page("pages/login.py")
@@ -150,6 +146,8 @@ def logout():
     get_documents.clear()
 
     st.session_state["logout_requested"] = True
+    # Ensure login.py skips cookie restore (same guard as go_to_login).
+    st.session_state["_skip_cookie_restore"] = True
 
     remove_auth_cookie()
 
@@ -160,61 +158,33 @@ def logout():
 # RESTORE AUTH AFTER REFRESH
 # =========================================================
 
-access_token = st.session_state.get(
-    "access_token"
-)
+access_token = st.session_state.get("access_token")
 
 if not access_token:
-
+    # Try to restore from cookie (covers page-refresh case)
     access_token = read_cookie_token()
 
     if access_token:
-
-        st.session_state[
-            "access_token"
-        ] = access_token
+        st.session_state["access_token"] = access_token
 
 
-# CookieManager can need another Streamlit pass
-# immediately after a browser refresh.
+# CookieManager may need ONE extra Streamlit pass after a browser
+# refresh (the JS component is async). Allow exactly ONE rerun;
+# on the second pass with still no token, treat it as "not logged in".
 if not access_token:
+    attempt = st.session_state.get("_dashboard_auth_attempt", 0)
 
-    attempt = st.session_state.get(
-        "_dashboard_auth_attempt",
-        0,
-    )
-
-    if attempt < 2:
-
-        st.session_state[
-            "_dashboard_auth_attempt"
-        ] = attempt + 1
-
-        time.sleep(0.25)
-
+    if attempt < 1:
+        # First visit with no token: give CookieManager one chance to hydrate
+        st.session_state["_dashboard_auth_attempt"] = attempt + 1
+        import time
+        time.sleep(0.3)
         st.rerun()
 
-    # No token after hydration attempts. This is a genuine
-    # "not logged in" state, not a failure of a previously-valid
-    # session, so we don't force auth_failed here - just stop and
-    # let the user click through. (Not a redirect, so no loop risk.)
-    st.session_state.pop(
-        "_dashboard_auth_attempt",
-        None,
-    )
-
-    st.warning(
-        "Please login to continue."
-    )
-
-    if st.button(
-        "Go to Login",
-        type="primary",
-    ):
-        st.switch_page(
-            "pages/login.py"
-        )
-
+    # No token after the single hydration rerun — genuinely not logged in.
+    # Do NOT call /me. Redirect directly to login.
+    st.session_state.pop("_dashboard_auth_attempt", None)
+    st.switch_page("pages/login.py")
     st.stop()
 
 
@@ -362,6 +332,10 @@ initial = (
     if user_name
     else "U"
 )
+
+# Persist for sidebar use on Documents/Chat pages
+st.session_state["user_name"] = user_name
+st.session_state["user_subtitle"] = user_subtitle
 
 
 # =========================================================
@@ -512,7 +486,6 @@ st.markdown(
     [data-testid="stSidebarNav"],
     [data-testid="stSidebarNavItems"],
     [data-testid="stSidebarNavSeparator"],
-    [data-testid="stSidebarCollapseButton"],
     [data-testid="stHeader"],
     [data-testid="stToolbar"],
     [data-testid="stDecoration"],
@@ -520,6 +493,13 @@ st.markdown(
     footer,
     #MainMenu {
         display: none !important;
+    }
+
+    /* Keep sidebar always visible — hide only the default collapse arrow
+       by making it invisible but still occupying space (so layout is stable). */
+    [data-testid="stSidebarCollapseButton"] {
+        visibility: hidden !important;
+        pointer-events: none !important;
     }
 
     html,
@@ -542,6 +522,9 @@ st.markdown(
         min-width: 208px !important;
         max-width: 208px !important;
         width: 208px !important;
+        display: flex !important;
+        visibility: visible !important;
+        transform: none !important;
     }
 
     section[data-testid="stSidebar"] > div:first-child {
@@ -567,14 +550,14 @@ st.markdown(
     }
 
     .sb-logo .mark {
-        width: 30px;
-        height: 30px;
-        border-radius: 9px;
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
         background: #7c5cff;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 5px 14px rgba(124, 92, 255, 0.28);
+        box-shadow: 0 4px 12px rgba(124, 92, 255, 0.32);
         flex-shrink: 0;
     }
 
@@ -590,7 +573,7 @@ st.markdown(
     .sb-nav-active {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 0;
         background: #1f2a3d;
         color: #ffffff;
         border-radius: 9px;
@@ -598,18 +581,38 @@ st.markdown(
         margin-bottom: 2px;
         font-size: 0.84rem;
         font-weight: 600;
+        cursor: default;
     }
 
-    .sb-nav-active svg {
+    /* Fixed-width icon slot — same as material icon area in buttons */
+    .sb-nav-active .nav-icon {
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         flex-shrink: 0;
+        margin-right: 10px;
     }
 
-    /* ---------------- NAV: BUTTON ITEMS (Documents, Chat) ---------------- */
+    .sb-nav-active .nav-icon svg {
+        display: block;
+    }
 
-    div[data-testid="stSidebar"] div[data-testid="stButton"] button {
+    /* ---------------- NAV: BUTTON ITEMS (Documents, Chat, Logout) ----------- */
+
+    /* Hit every selector Streamlit generates for sidebar buttons */
+    div[data-testid="stSidebar"] div[data-testid="stButton"] > button,
+    div[data-testid="stSidebar"] div[data-testid="stButton"] > button:focus,
+    div[data-testid="stSidebar"] div[data-testid="stButton"] > button:active,
+    div[data-testid="stSidebar"] div[data-testid="stButton"] > button[kind],
+    div[data-testid="stSidebar"] div[data-testid="stButton"] > button[kind="secondary"],
+    div[data-testid="stSidebar"] [data-baseweb="button"] {
         background: transparent !important;
         color: #8795aa !important;
         border: none !important;
+        border-width: 0 !important;
+        outline: none !important;
         box-shadow: none !important;
         border-radius: 9px !important;
         min-height: 38px !important;
@@ -619,24 +622,41 @@ st.markdown(
         align-items: center !important;
         font-size: 0.84rem !important;
         font-weight: 500 !important;
+        /* Match Overview pill: 11px left, 11px right */
         padding: 0 11px !important;
         margin-bottom: 2px !important;
-        gap: 10px !important;
+        gap: 0 !important;
+        width: 100% !important;
     }
 
-    div[data-testid="stSidebar"] div[data-testid="stButton"] button:hover {
+    div[data-testid="stSidebar"] div[data-testid="stButton"] > button:hover,
+    div[data-testid="stSidebar"] div[data-testid="stButton"] > button:hover[kind],
+    div[data-testid="stSidebar"] div[data-testid="stButton"] > button:hover[kind="secondary"] {
         background: #172235 !important;
         color: #ffffff !important;
+        border: none !important;
+        border-width: 0 !important;
+        outline: none !important;
+        box-shadow: none !important;
     }
 
     div[data-testid="stSidebar"] div[data-testid="stButton"] button p {
         text-align: left !important;
         font-size: 0.84rem !important;
+        margin: 0 !important;
     }
 
-    /* Material icon sizing/color inside sidebar nav + logout buttons */
+    /* Force the Material icon and text to use the SAME fixed-width slot
+       as the SVG in .sb-nav-active so all items line up at the same X. */
     div[data-testid="stSidebar"] div[data-testid="stButton"] button [data-testid="stIconMaterial"] {
-        font-size: 17px !important;
+        font-size: 20px !important;
+        width: 20px !important;
+        height: 20px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+        margin-right: 10px !important;
     }
 
     /* ---------------- SPACER / DIVIDER / PROFILE ---------------- */
@@ -694,6 +714,20 @@ st.markdown(
 
     /* Logout button needs no bottom margin since it's the last item. */
     div[data-testid="stSidebar"] div[data-testid="stButton"]:last-of-type button {
+        margin-bottom: 0 !important;
+    }
+
+    /* Strip default <p> margin that st.markdown adds inside sidebar —
+       otherwise the logo/Overview rows get unwanted top/bottom spacing. */
+    div[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] p,
+    div[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] div {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Remove Streamlit's default padding on the stMarkdown wrapper in sidebar */
+    div[data-testid="stSidebar"] div[data-testid="stMarkdown"] {
+        padding: 0 !important;
         margin-bottom: 0 !important;
     }
 
@@ -880,75 +914,53 @@ st.markdown(
 
 with st.sidebar:
 
-    # ---- Logo ----
-    st.html(
+    # ---- Logo ---- (st.markdown so main-DOM CSS applies)
+    st.markdown(
         """
-        <div class="sb-logo">
-
-            <div class="mark">
-                <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                >
-                    <rect
-                        x="4"
-                        y="4"
-                        width="16"
-                        height="16"
-                        rx="4"
-                        fill="white"
-                    />
-
-                    <rect
-                        x="8"
-                        y="8"
-                        width="8"
-                        height="1.8"
-                        rx="0.9"
-                        fill="#7c5cff"
-                    />
-
-                    <rect
-                        x="8"
-                        y="11.2"
-                        width="6"
-                        height="1.8"
-                        rx="0.9"
-                        fill="#7c5cff"
-                    />
-
-                    <rect
-                        x="8"
-                        y="14.4"
-                        width="4"
-                        height="1.8"
-                        rx="0.9"
-                        fill="#7c5cff"
-                    />
+        <div style="display:flex;align-items:center;gap:9px;padding:4px 4px 22px 4px;">
+            <div style="width:34px;height:34px;border-radius:8px;background:#7c5cff;
+                        display:flex;align-items:center;justify-content:center;
+                        box-shadow:0 4px 12px rgba(124,92,255,0.32);flex-shrink:0;">
+                <svg width="18" height="20" viewBox="0 0 18 20"
+                     fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- document body (filled white) -->
+                    <path d="M2 0 L12 0 L16 4 L16 18 Q16 20 14 20 L4 20 Q2 20 2 18 L2 2 Q2 0 4 0 Z"
+                          fill="rgba(255,255,255,0.95)"/>
+                    <!-- fold triangle -->
+                    <path d="M12 0 L16 4 L12 4 Z" fill="rgba(110,75,210,0.55)"/>
+                    <!-- text lines (purple rects) -->
+                    <rect x="4.5" y="8" width="7.5" height="1.4" rx="0.7" fill="#7c5cff"/>
+                    <rect x="4.5" y="11" width="6" height="1.4" rx="0.7" fill="#7c5cff"/>
+                    <rect x="4.5" y="14" width="4.5" height="1.4" rx="0.7" fill="#7c5cff"/>
                 </svg>
             </div>
-
-            <div class="name">
-                DocQuery
-            </div>
-
+            <div style="color:#ffffff;font-size:0.98rem;font-weight:700;
+                        letter-spacing:-0.01em;line-height:1;">DocQuery</div>
         </div>
-        """
+        """,
+        unsafe_allow_html=True,
     )
 
-    # ---- Overview (active, static - already on this page) ----
-    st.html(
+    # ---- Overview (active pill) ---- (st.markdown so inline styles & CSS both apply)
+    st.markdown(
         """
-        <div class="sb-nav-active">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2.8 3 10.4V21a1 1 0 0 0 1 1h5.5a.5.5 0 0 0 .5-.5V15a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v6.5a.5.5 0 0 0 .5.5H20a1 1 0 0 0 1-1V10.4L12 2.8Z"/>
-            </svg>
+        <div style="display:flex;align-items:center;background:#1f2a3d;
+                    color:#ffffff;border-radius:9px;padding:9px 11px;
+                    margin-bottom:2px;font-size:0.84rem;font-weight:600;">
+            <span style="width:20px;height:20px;min-width:20px;
+                          display:flex;align-items:center;justify-content:center;
+                          margin-right:10px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffffff"
+                     xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2.8 3 10.4V21a1 1 0 0 0 1 1h5.5a.5.5 0 0 0
+                             .5-.5V15a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v6.5a.5.5
+                             0 0 0 .5.5H20a1 1 0 0 0 1-1V10.4L12 2.8Z"/>
+                </svg>
+            </span>
             <span>Overview</span>
         </div>
-        """
+        """,
+        unsafe_allow_html=True,
     )
 
     # ---- Documents ----
@@ -958,15 +970,10 @@ with st.sidebar:
         icon=":material/description:",
         use_container_width=True,
     ):
-
         try:
-            st.switch_page(
-                "pages/documents.py"
-            )
+            st.switch_page("pages/documents.py")
         except Exception:
-            st.info(
-                "Documents page is not available yet."
-            )
+            st.info("Documents page is not available yet.")
 
     # ---- Chat ----
     if st.button(
@@ -975,31 +982,33 @@ with st.sidebar:
         icon=":material/forum:",
         use_container_width=True,
     ):
-
         try:
-            st.switch_page(
-                "pages/chat.py"
-            )
+            st.switch_page("pages/chat.py")
         except Exception:
-            st.info(
-                "Chat page is not available yet."
-            )
+            st.info("Chat page is not available yet.")
 
-    # ---- Spacer pushing profile/logout to the bottom ----
-    st.html('<div class="sb-spacer"></div>')
+    # ---- Spacer ----
+    st.markdown('<div style="flex:1;min-height:200px;"></div>', unsafe_allow_html=True)
 
     # ---- Divider + profile ----
-    st.html(
+    st.markdown(
         f"""
-        <div class="sb-divider"></div>
-        <div class="sb-profile">
-            <div class="sb-avatar">{html.escape(initial)}</div>
-            <div class="sb-profile-text">
-                <div class="sb-profile-name">{safe_name}</div>
-                <div class="sb-profile-subtitle">{safe_subtitle}</div>
+        <div style="border-top:1px solid rgba(255,255,255,0.08);margin:2px 4px 14px 4px;"></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:0 4px 16px 4px;">
+            <div style="width:32px;height:32px;border-radius:50%;background:#273449;
+                        display:flex;align-items:center;justify-content:center;
+                        color:#ffffff;font-size:0.72rem;font-weight:700;
+                        flex-shrink:0;">{html.escape(initial)}</div>
+            <div style="min-width:0;">
+                <div style="color:#ffffff;font-size:0.8rem;font-weight:600;
+                            line-height:1.3;">{safe_name}</div>
+                <div style="color:#65748b;font-size:0.68rem;margin-top:1px;
+                            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+                            max-width:128px;">{safe_subtitle}</div>
             </div>
         </div>
-        """
+        """,
+        unsafe_allow_html=True,
     )
 
     # ---- Logout ----

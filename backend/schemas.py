@@ -14,3 +14,4 @@ class UserLogin(BaseModel):
 
 class QueryRequest(BaseModel):
     question: str
+    document_id: int

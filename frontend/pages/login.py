@@ -12,7 +12,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-cookie_manager = stx.CookieManager(key="dashboard_cookies")
+cookie_manager = stx.CookieManager(key="global_cookie_manager")
 
 
 def inject_login_css():
@@ -520,15 +520,27 @@ def inject_login_css():
     st.markdown(textwrap.dedent(css), unsafe_allow_html=True)
 
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 30  # must match jwt_handler.ACCESS_TOKEN_EXPIRE_MINUTES
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 8  # must match backend/auth.py
 
 
 def login_page():
-    # Any auth failure (expired token, 401 from backend, explicit logout)
-    # lands here. We NEVER re-read the cookie in this branch — that's what
-    # broke the loop, since deletion isn't guaranteed to have propagated
-    # to the browser yet on this same rerun.
+    # -------------------------------------------------------
+    # AUTH STATE CHECK
+    # -------------------------------------------------------
+    # If the user already has a valid session token, go to dashboard.
+    # But NEVER re-read the cookie when we arrived here because of a
+    # 401 failure or an explicit logout. The `_skip_cookie_restore`
+    # flag is set by dashboard.py via go_to_login(reason_is_failure=True)
+    # or logout(), and it persists across reruns until the user
+    # completes a fresh login. This is the key guard that breaks the
+    # 401 → read stale cookie → switch to dashboard → 401 loop.
+    # -------------------------------------------------------
+
+    skip_cookie = st.session_state.get("_skip_cookie_restore", False)
+
     if st.session_state.get("logout_requested") or st.session_state.get("auth_failed"):
+        # Arrived from a logout or a 401. Clear the stale cookie once,
+        # then set the skip flag so subsequent reruns don't re-read it.
         if cookie_manager.get("access_token") is not None:
             try:
                 cookie_manager.delete("access_token")
@@ -537,8 +549,11 @@ def login_page():
         st.session_state.pop("logout_requested", None)
         st.session_state.pop("auth_failed", None)
         st.session_state.pop("access_token", None)
-        restored_token = None
-    else:
+        st.session_state["_skip_cookie_restore"] = True
+        skip_cookie = True
+
+    if not skip_cookie:
+        # Not coming from a failure/logout: safe to restore from cookie.
         restored_token = st.session_state.get("access_token")
         if not restored_token:
             if hasattr(st, "context") and hasattr(st.context, "cookies"):
@@ -546,12 +561,15 @@ def login_page():
             if not restored_token:
                 restored_token = cookie_manager.get("access_token")
 
-    if restored_token:
-        if isinstance(restored_token, str):
-            import urllib.parse
-            restored_token = urllib.parse.unquote(restored_token).strip('"\'')
-        st.session_state["access_token"] = restored_token
-        st.switch_page("pages/dashboard.py")
+        if restored_token:
+            if isinstance(restored_token, str):
+                import urllib.parse
+                restored_token = urllib.parse.unquote(restored_token).strip('"\'') 
+            st.session_state["access_token"] = restored_token
+            st.switch_page("pages/dashboard.py")
+    else:
+        # Arrived after failure/logout — do not call /me, do not redirect.
+        pass
 
     inject_login_css()
 
@@ -593,6 +611,9 @@ def login_page():
                             access_token = response.json().get("access_token")
 
                             st.session_state["access_token"] = access_token
+                            # Clear the skip flag: fresh login is valid, so
+                            # subsequent page-refreshes may read the cookie again.
+                            st.session_state.pop("_skip_cookie_restore", None)
 
                             # Cookie lifetime now matches the JWT's actual
                             # lifetime. A 7-day cookie holding a 30-min

@@ -1,13 +1,13 @@
 import os
 
 from dotenv import load_dotenv
-from google import genai
+from groq import Groq
 
 load_dotenv()
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-MODEL = "gemini-3.6-flash"
+MODEL = "openai/gpt-oss-20b"
 
 
 def generate_answer(question, retrieved_documents):
@@ -40,6 +40,8 @@ Rules:
 - If the context does not contain enough information to answer the question, say:
   "I couldn't find this information in the uploaded documents."
 - Give a concise and clear answer.
+- Mention relevant details from the retrieved context.
+- Do not answer using information from documents that are not included in the retrieved context.
 
 Retrieved Context:
 {context}
@@ -50,9 +52,41 @@ User Question:
 Answer:
 """
 
-    response = client.models.generate_content(
-        model=MODEL,
-        contents=prompt
-    )
+    try:
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a document question-answering assistant. "
+                        "Answer questions only using the provided retrieved "
+                        "document context. Never invent information."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0
+        )
 
-    return response.text
+        answer_text = response.choices[0].message.content
+        if not answer_text or str(answer_text).strip() == "":
+            return "Unable to generate an answer. The model returned an empty response."
+        return answer_text
+
+    except Exception as e:
+        error_msg = str(e).lower()
+
+        if (
+            "429" in error_msg
+            or "resource_exhausted" in error_msg
+            or "503" in error_msg
+            or "unavailable" in error_msg
+            or "quota" in error_msg
+        ):
+            return "AI service is temporarily unavailable. Please try again later."
+
+        return "Unable to generate an answer right now. Please try again."
