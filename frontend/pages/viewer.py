@@ -1,3 +1,4 @@
+import os
 import html as html_mod
 import urllib.parse
 
@@ -60,7 +61,7 @@ if not access_token:
 
 st.session_state.pop("_viewer_auth_attempt", None)
 
-BACKEND = "http://127.0.0.1:8000"
+BACKEND = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
 HEADERS = {"Authorization": f"Bearer {access_token}"}
 print(f'VIEWER ACTIVE. Token prefix: {str(access_token)[:15]}')
 

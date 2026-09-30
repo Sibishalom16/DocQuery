@@ -1,6 +1,6 @@
 import html
 import urllib.parse
-
+import os 
 import extra_streamlit_components as stx
 import requests
 import streamlit as st
@@ -60,7 +60,7 @@ initial = str(user_name)[0].upper() if user_name else "U"
 safe_name = html.escape(str(user_name))
 safe_subtitle = html.escape(str(user_subtitle))
 
-BACKEND = "http://127.0.0.1:8000"
+BACKEND = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
 HEADERS = {"Authorization": f"Bearer {access_token}"}
 
 # =========================================================

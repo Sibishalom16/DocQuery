@@ -1,3 +1,4 @@
+import os
 import datetime
 
 import extra_streamlit_components as stx
@@ -603,7 +604,7 @@ def login_page():
                 with st.spinner("Authenticating..."):
                     try:
                         response = requests.post(
-                            "http://127.0.0.1:8000/login",
+                            f"{os.getenv('BACKEND_URL', 'http://127.0.0.1:8000')}/login",
                             json={"email": email, "password": password},
                             timeout=5
                         )

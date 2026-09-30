@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import requests
 import textwrap
@@ -600,7 +601,7 @@ def login_page():
                 with st.spinner("Creating your account..."):
                     try:
                         response = requests.post(
-                            "http://127.0.0.1:8000/register",
+                            f"{os.getenv('BACKEND_URL', 'http://127.0.0.1:8000')}/register",
                             json={
                                 "name": name,
                                 "email": email,
@@ -610,7 +611,7 @@ def login_page():
                         )
                         if response.status_code == 200:
                             login_resp = requests.post(
-                                "http://127.0.0.1:8000/login",
+                                f"{os.getenv('BACKEND_URL', 'http://127.0.0.1:8000')}/login",
                                 json={"email": email, "password": password},
                                 timeout=5
                             )
