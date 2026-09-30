@@ -10,7 +10,7 @@ python-multipart
 email-validator
 
 passlib
-bcrypt
+bcrypt==4.3.0
 python-jose
 
 chromadb
