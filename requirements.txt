@@ -18,7 +18,7 @@ torch==2.12.1+cpu
 sentence-transformers
 pypdf
 langchain-text-splitters
-
+groq
 google-genai
 
 streamlit
